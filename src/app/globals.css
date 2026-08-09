@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --color-primary: #0f172a;
+  --color-on-primary: #ffffff;
+  --color-secondary: #1e293b;
+  --color-accent: #22c55e;
+  --color-background: #020617;
+  --color-foreground: #f8fafc;
+  --color-muted: #1a1e2f;
+  --color-border: #334155;
+  --color-destructive: #ef4444;
+  --color-ring: #4ade80;
+}
+
+* { border-color: var(--color-border); }
+html { background: var(--color-background); scroll-behavior: smooth; }
+body {
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 78% -10%, rgb(34 197 94 / 0.07), transparent 30rem),
+    var(--color-background);
+  color: var(--color-foreground);
+  font-family: "Fira Sans", ui-sans-serif, system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: rgb(34 197 94 / 0.3); color: white; }
+
+:focus-visible { outline: 2px solid var(--color-ring); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer components {
+  .data-table-wrap { @apply overflow-x-auto rounded-xl border border-pulse-border/80 bg-pulse-surface/80; }
+  .data-table { @apply min-w-full divide-y divide-pulse-border/70 text-left text-sm; }
+  .data-table thead { @apply bg-slate-900/80 text-[11px] uppercase tracking-[0.12em] text-slate-500; }
+  .data-table th { @apply whitespace-nowrap px-4 py-3 font-semibold; }
+  .data-table tbody { @apply divide-y divide-pulse-border/50; }
+  .data-table td { @apply px-4 py-3.5 text-slate-300; }
+  .data-table tbody tr { @apply transition-colors duration-150 hover:bg-slate-800/50; }
+  .button-primary { @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-emerald-400 px-4 text-sm font-semibold text-slate-950 transition-colors hover:bg-emerald-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-40; }
+  .button-secondary { @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-600 bg-slate-900 px-4 text-sm font-semibold text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:cursor-not-allowed disabled:opacity-40; }
+  .field { @apply min-h-11 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 text-base text-slate-100 placeholder:text-slate-600 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 sm:text-sm; }
+}
