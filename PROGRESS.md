@@ -86,3 +86,6 @@ development defaults to all mocked and production defaults to all live.
   browser-test origin boundary discovered during the final validation pass.
 - Published `agent/implement-pulseops` and opened draft pull request
   [#1](https://github.com/Nielk74/pulseops/pull/1).
+- Reproduced the first Linux Chromium CI failure, removed intrinsic card/chart
+  minimum widths, made the repeated incident assertion semantic, and added
+  overflow-offender diagnostics; the CI-style Chromium suite then passed.

@@ -26,7 +26,7 @@ const tooltipStyle = {
 
 export function BuildDurationChart({ data }: { data: Array<{ build: string; durationMinutes: number; status: string }> }) {
   return (
-    <div role="img" aria-label="Build duration in minutes for the latest builds" className="h-64 w-full">
+    <div role="img" aria-label="Build duration in minutes for the latest builds" className="h-64 min-w-0 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 12, right: 8, left: -20, bottom: 0 }} accessibilityLayer>
           <defs>
@@ -48,7 +48,7 @@ export function BuildDurationChart({ data }: { data: Array<{ build: string; dura
 
 export function TestComparisonChart({ data }: { data: Array<{ name: string; currentMinutes: number; medianMinutes: number; anomaly: string }> }) {
   return (
-    <div role="img" aria-label="Current test duration compared with historical median in minutes" className="h-64 w-full">
+    <div role="img" aria-label="Current test duration compared with historical median in minutes" className="h-64 min-w-0 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 12, right: 8, left: -20, bottom: 0 }} accessibilityLayer>
           <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
@@ -70,7 +70,7 @@ export function ServiceDistributionChart({ data }: { data: Array<{ name: string;
   const total = data.reduce((sum, item) => sum + item.value, 0);
   return (
     <div>
-      <div role="img" aria-label={`${total} services grouped by health status`} className="h-52 w-full">
+      <div role="img" aria-label={`${total} services grouped by health status`} className="h-52 min-w-0 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart accessibilityLayer>
             <Pie data={data} dataKey="value" nameKey="name" innerRadius={58} outerRadius={78} paddingAngle={3} stroke="none">
