@@ -25,7 +25,7 @@ are present so those capabilities can be added safely.
 - [x] Add typed action plans, allow-listing, audit history, and a role boundary.
 - [x] Add unit/browser tests, CI, Docker packaging, and developer documentation.
 - [x] Validate lint, types, tests, migration, seed, production build, and audit.
-- [ ] Push the implementation and open a draft pull request.
+- [x] Push the implementation and open a draft pull request.
 
 ## Source mocking matrix
 
@@ -84,4 +84,5 @@ development defaults to all mocked and production defaults to all live.
   contribution guidance, and an overview screenshot.
 - Corrected test discovery, TanStack Table v9 feature registration, and the
   browser-test origin boundary discovered during the final validation pass.
-- Completed the verified baseline above; publication remains the final step.
+- Published `agent/implement-pulseops` and opened draft pull request
+  [#1](https://github.com/Nielk74/pulseops/pull/1).
