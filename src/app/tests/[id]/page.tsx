@@ -74,7 +74,7 @@ export default async function TestDetailPage({ params }: { params: Promise<{ id:
           <CardContent className="space-y-4">
             <ContextRow label="Build" value={build ? `#${build.buildNumber} · ${build.buildType}` : occurrence.buildId} href={build ? `/builds/${build.id}` : undefined} />
             <ContextRow label="Commit" value={shortSha(build?.commitSha)} href={build?.commitSha ? `/commits/${build.commitSha}` : undefined} icon={<RiGitCommitLine className="h-4 w-4" />} />
-            <ContextRow label="Machine" value={machine?.hostname ?? "Not mapped"} href={machine ? `/fleet/${machine.id}` : undefined} />
+            <ContextRow label="Machine" value={machine?.hostname ?? "Not mapped"} href={machine ? `/fleet?machine=${machine.id}#machine-detail` : undefined} />
             <ContextRow label="Started" value={occurrence.startedAt.toLocaleString()} />
             <ContextRow label="Finished" value={occurrence.finishedAt.toLocaleString()} />
             <ContextRow label="Result" value={occurrence.status} />

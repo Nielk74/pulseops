@@ -106,6 +106,10 @@ V1 executable actions are read-only refresh/probe operations. The remaining
 action types can be planned so the protocol and audit shape are stable, but
 execution fails closed until the trusted executor is enabled.
 
+The operator experience keeps machine selection, health, drift, inventory,
+action planning, and audit history on the canonical `/fleet` route. Legacy
+machine-detail and Actions URLs redirect into that in-page context.
+
 ## Runtime model
 
 - optional in-process polling with configurable intervals;

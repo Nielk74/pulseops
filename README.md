@@ -21,6 +21,8 @@ evidence-backed explanation without requiring an AI model.
 - lightweight Oracle connectivity, minimal SQL, and representative probes
 - Windows machine health, Chocolatey inventory, allow-listed environment values,
   and reference-machine drift
+- a single Fleet operations workspace with selectable machine cards, progressive
+  health and inventory detail, contextual actions, and per-machine audit history
 - median/MAD slow-test detection and suspiciously fast-run detection
 - deterministic evidence scoring across services, Oracle, machines,
   deployments, commits, and test discovery
@@ -193,6 +195,7 @@ be configured for live sources entirely through environment variables.
 - [Implementation progress](PROGRESS.md)
 - [Technical plan](pulseops-technical-plan.md)
 - [Persisted design system](design-system/pulseops/MASTER.md)
+- [Fleet workspace design rules](design-system/pulseops/pages/fleet.md)
 - [Security model](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)
 

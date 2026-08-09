@@ -12,7 +12,6 @@ import {
   RiHammerLine,
   RiMenuLine,
   RiPulseLine,
-  RiPlayCircleLine,
   RiSettings3Line,
   RiShieldCheckLine,
   RiTimeLine
@@ -25,10 +24,9 @@ const navigation = [
   { href: "/builds", label: "Builds", icon: RiHammerLine },
   { href: "/timeline", label: "Timeline", icon: RiTimeLine },
   { href: "/services", label: "Services", icon: RiPulseLine },
-  { href: "/fleet", label: "Fleet", icon: RiComputerLine },
+  { href: "/fleet", label: "Fleet ops", icon: RiComputerLine },
   { href: "/commits", label: "Commits", icon: RiGitCommitLine },
-  { href: "/incidents", label: "Incidents", icon: RiShieldCheckLine },
-  { href: "/actions", label: "Actions", icon: RiPlayCircleLine }
+  { href: "/incidents", label: "Incidents", icon: RiShieldCheckLine }
 ];
 
 function NavContent({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {

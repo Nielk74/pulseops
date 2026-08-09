@@ -2,6 +2,7 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { explainTestOccurrence } from "@/server/correlation/service";
 import { db } from "@/server/db";
 import {
+  actionTargets,
   actions,
   buildArtifacts,
   builds,
@@ -226,5 +227,11 @@ export function getCommitDetail(sha: string) {
 }
 
 export function getActions() {
-  return db.select().from(actions).orderBy(desc(actions.requestedAt)).all();
+  return db.select().from(actions).orderBy(desc(actions.requestedAt)).all().map((action) => ({
+    ...action,
+    targets: db.select({
+      machineId: actionTargets.machineId,
+      status: actionTargets.status
+    }).from(actionTargets).where(eq(actionTargets.actionId, action.id)).all()
+  }));
 }

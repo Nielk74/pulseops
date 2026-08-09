@@ -23,6 +23,8 @@ are present so those capabilities can be added safely.
 - [x] Add the overview, builds, tests, timeline, services, fleet, commits,
       incidents, actions, and settings experiences.
 - [x] Add typed action plans, allow-listing, audit history, and a role boundary.
+- [x] Consolidate fleet inventory, machine detail, action planning, and audit
+      history into one selectable-card workspace.
 - [x] Add unit/browser tests, CI, Docker packaging, and developer documentation.
 - [x] Validate lint, types, tests, migration, seed, production build, and audit.
 - [x] Push the implementation and open a draft pull request.
@@ -50,7 +52,7 @@ development defaults to all mocked and production defaults to all live.
 - Designed anomalies: slow `UFT Pricing` correlated to `PricingApi`; suspiciously
   fast `UFT Login` correlated to test discovery.
 - Seven unit tests passed across anomaly statistics, detection, and correlation.
-- Seven Playwright checks passed across desktop and 390 px mobile; one
+- Nine Playwright checks passed across desktop and 390 px mobile; one
   desktop duplicate of the mobile-only overflow check is intentionally skipped.
 - Production build, TypeScript, ESLint, migration, data integrity check, and
   production dependency audit passed. Production dependency findings: zero.
@@ -69,6 +71,8 @@ development defaults to all mocked and production defaults to all live.
   plan-first, role-checked, and audited; only the diagnostic refresh is executable.
 - The UI uses a responsive, dark, high-contrast operations design system with
   semantic labels, keyboard focus, reduced motion, and non-color status cues.
+- Fleet is the canonical machine workspace. Legacy `/actions` and `/fleet/:id`
+  URLs preserve bookmarks by redirecting into the selected in-page context.
 
 ## Work log
 
@@ -89,3 +93,6 @@ development defaults to all mocked and production defaults to all live.
 - Reproduced the first Linux Chromium CI failure, removed intrinsic card/chart
   minimum widths, made the repeated incident assertion semantic, and added
   overflow-offender diagnostics; the CI-style Chromium suite then passed.
+- Replaced the Fleet table and separate Actions/detail screens with selectable
+  machine cards, hover/focus telemetry, in-place configuration detail,
+  icon-led action planning, and a machine-specific audit trail.

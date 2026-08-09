@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { db } from "@/server/db";
 import { actions, actionTargets, machines, teamcityAgents } from "@/server/db/schema";
 import { syncSource } from "@/server/polling/sync";
@@ -16,7 +16,10 @@ const executableV1Actions = new Set<ActionType>([
 
 function previousState(type: ActionType, target: string) {
   if (["ENABLE_AGENT", "DISABLE_AGENT"].includes(type)) {
-    return db.select().from(teamcityAgents).where(eq(teamcityAgents.id, target)).get();
+    return db.select().from(teamcityAgents).where(or(
+      eq(teamcityAgents.id, target),
+      eq(teamcityAgents.machineId, target)
+    )).get();
   }
   return db.select().from(machines).where(eq(machines.id, target)).get();
 }
