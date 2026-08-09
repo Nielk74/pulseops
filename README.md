@@ -21,8 +21,8 @@ evidence-backed explanation without requiring an AI model.
 - lightweight Oracle connectivity, minimal SQL, and representative probes
 - Windows machine health, Chocolatey inventory, allow-listed environment values,
   and reference-machine drift
-- a single Fleet operations workspace with selectable machine cards, progressive
-  health and inventory detail, contextual actions, and per-machine audit history
+- a single Fleet operations workspace with additive multi-select machine cards,
+  focused health detail, bulk action planning, and selection-aware audit history
 - median/MAD slow-test detection and suspiciously fast-run detection
 - deterministic evidence scoring across services, Oracle, machines,
   deployments, commits, and test discovery

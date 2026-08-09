@@ -4,12 +4,14 @@ import { useEffect, useRef, useState, type ElementType } from "react";
 import { useRouter } from "next/navigation";
 import {
   RiArchiveStackLine,
-  RiArrowDownSLine,
   RiCheckboxCircleFill,
+  RiCheckboxMultipleLine,
+  RiCloseCircleLine,
   RiComputerLine,
   RiCpuLine,
   RiErrorWarningLine,
   RiEyeLine,
+  RiFocus3Line,
   RiGitBranchLine,
   RiHardDrive3Line,
   RiHistoryLine,
@@ -163,7 +165,7 @@ function SummaryStat({
 
 function TelemetryCell({ icon: Icon, label, value }: { icon: ElementType; label: string; value: string }) {
   return (
-    <span className="rounded-lg bg-slate-950/55 p-2.5 transition-colors duration-200 group-hover:bg-slate-950/80 group-focus-visible:bg-slate-950/80">
+    <span className="rounded-lg bg-slate-950/55 p-2.5 transition-colors duration-200 group-hover:bg-slate-950/80 group-focus-within:bg-slate-950/80">
       <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.1em] text-slate-600">
         <Icon aria-hidden="true" className="h-3.5 w-3.5" /> {label}
       </span>
@@ -203,17 +205,26 @@ export function FleetOperations({
   machines,
   actions,
   initialMachineId,
+  initialSelectedIds,
   generatedAt
 }: {
   machines: FleetMachineData[];
   actions: FleetActionData[];
   initialMachineId?: string;
+  initialSelectedIds?: string[];
   generatedAt: Date;
 }) {
   const router = useRouter();
   const detailsRef = useRef<HTMLElement>(null);
-  const [selectedId, setSelectedId] = useState(initialMachineId ?? machines[0]?.id ?? "");
-  const selectedMachine = machines.find((machine) => machine.id === selectedId) ?? machines[0];
+  const [focusedId, setFocusedId] = useState(initialMachineId ?? machines[0]?.id ?? "");
+  const [selectedIds, setSelectedIds] = useState<string[]>(() => {
+    const validIds = new Set(machines.map((machine) => machine.id));
+    const requestedIds = initialSelectedIds ?? (initialMachineId ? [initialMachineId] : []);
+    return [...new Set(requestedIds)].filter((id) => validIds.has(id));
+  });
+  const selectedMachine = machines.find((machine) => machine.id === focusedId) ?? machines[0];
+  const selectedIdSet = new Set(selectedIds);
+  const selectedMachines = machines.filter((machine) => selectedIdSet.has(machine.id));
   const onlineCount = machines.filter((machine) => machine.health[0]?.reachable).length;
   const attentionCount = machines.filter((machine) => machineStatus(machine).status !== "HEALTHY").length;
   const driftCount = machines.reduce((total, machine) => total + machine.drift.length, 0);
@@ -225,13 +236,37 @@ export function FleetOperations({
     window.requestAnimationFrame(() => target?.scrollIntoView({ behavior: "auto", block: "start" }));
   }, []);
 
-  function selectMachine(id: string) {
-    setSelectedId(id);
+  function updateFleetUrl(nextFocusedId: string, nextSelectedIds: string[], hash = window.location.hash) {
     const url = new URL(window.location.href);
     url.pathname = "/fleet";
-    url.searchParams.set("machine", id);
-    url.hash = "machine-detail";
+    url.searchParams.set("machine", nextFocusedId);
+    url.searchParams.set("targets", nextSelectedIds.join(","));
+    url.hash = hash;
     window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }
+
+  function toggleMachine(id: string) {
+    const nextSelectedIds = selectedIdSet.has(id)
+      ? selectedIds.filter((selectedId) => selectedId !== id)
+      : [...selectedIds, id];
+    setSelectedIds(nextSelectedIds);
+    updateFleetUrl(focusedId, nextSelectedIds);
+  }
+
+  function selectAllMachines() {
+    const nextSelectedIds = machines.map((machine) => machine.id);
+    setSelectedIds(nextSelectedIds);
+    updateFleetUrl(focusedId, nextSelectedIds);
+  }
+
+  function clearSelection() {
+    setSelectedIds([]);
+    updateFleetUrl(focusedId, []);
+  }
+
+  function focusMachine(id: string) {
+    setFocusedId(id);
+    updateFleetUrl(id, selectedIds, "#machine-detail");
     window.requestAnimationFrame(() => {
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       detailsRef.current?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
@@ -241,7 +276,7 @@ export function FleetOperations({
   if (!selectedMachine) {
     return (
       <div className="mx-auto max-w-[1200px] space-y-6">
-        <PageHeader eyebrow="Machines · actions · audit" title="Fleet operations" description="Select a machine to inspect health, configuration, and safe operational actions in one workspace." />
+        <PageHeader eyebrow="Machines · actions · audit" title="Fleet operations" description="Select machines to inspect health, configuration, and safe operational actions in one workspace." />
         <EmptyState title="No machines available" description="Run the machine connector or enable MOCK_MACHINES to populate this workspace." />
       </div>
     );
@@ -249,14 +284,19 @@ export function FleetOperations({
 
   const latest = selectedMachine.health[0];
   const selectedStatus = machineStatus(selectedMachine);
-  const selectedActions = actions.filter((action) => action.targets.some((target) => target.machineId === selectedMachine.id));
+  const selectedActions = actions.filter((action) => action.targets.some((target) => selectedIdSet.has(target.machineId)));
+  const selectionLabel = selectedMachines.length === 0
+    ? "No machines selected"
+    : selectedMachines.length === 1
+      ? selectedMachines[0].hostname
+      : `${selectedMachines.length} machines`;
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
       <PageHeader
         eyebrow="Machines · actions · audit"
         title="Fleet operations"
-        description="Select a machine, inspect its live operational context, and create an audited action plan without leaving this page."
+        description="Select multiple machines, inspect focused detail, and create one audited bulk action plan without leaving this page."
         actions={<StatusBadge status={attentionCount ? "DEGRADED" : "HEALTHY"} label={attentionCount ? `${attentionCount} need attention` : "Fleet healthy"} />}
       />
 
@@ -270,71 +310,105 @@ export function FleetOperations({
       <section aria-labelledby="machine-grid-title">
         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 id="machine-grid-title" className="font-semibold text-white">Choose a machine</h2>
-            <p className="mt-1 text-sm text-slate-500">Hover or focus for quick telemetry; select for inventory, drift, actions, and history.</p>
+            <h2 id="machine-grid-title" className="font-semibold text-white">Choose machines</h2>
+            <p className="mt-1 text-sm text-slate-500">Select any number of cards for bulk actions. Open details separately to keep building your selection.</p>
           </div>
           <p className="flex items-center gap-2 text-xs text-slate-500">
-            <RiEyeLine aria-hidden="true" className="h-4 w-4" /> Quick context stays available on touch
+            <RiEyeLine aria-hidden="true" className="h-4 w-4" /> Telemetry stays visible on touch
           </p>
         </div>
+
+        <div aria-label="Fleet selection controls" className="mb-3 flex flex-col gap-3 rounded-xl border border-slate-700/80 bg-slate-900/60 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-emerald-400/10 text-emerald-300 ring-1 ring-emerald-400/20">
+              <RiCheckboxMultipleLine aria-hidden="true" className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white"><span className="font-mono tabular-nums">{selectedMachines.length}</span> {selectedMachines.length === 1 ? "machine" : "machines"} selected</p>
+              <p className="mt-0.5 text-xs text-slate-500">The action planner applies to this whole selection.</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={selectAllMachines} disabled={selectedMachines.length === machines.length} className="button-secondary min-h-11 flex-1 px-3 sm:flex-none">
+              <RiCheckboxMultipleLine aria-hidden="true" className="h-4 w-4" /> Select all
+            </button>
+            <button type="button" onClick={clearSelection} disabled={selectedMachines.length === 0} className="button-secondary min-h-11 flex-1 px-3 sm:flex-none">
+              <RiCloseCircleLine aria-hidden="true" className="h-4 w-4" /> Clear
+            </button>
+          </div>
+        </div>
+
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {machines.map((machine) => {
             const machineLatest = machine.health[0];
             const status = machineStatus(machine);
-            const selected = machine.id === selectedMachine.id;
+            const selected = selectedIdSet.has(machine.id);
+            const focused = machine.id === selectedMachine.id;
             return (
-              <button
+              <article
                 key={machine.id}
-                type="button"
-                aria-label={`${machine.hostname}, ${status.label}, CPU ${percent(machineLatest?.cpuPercent)}, memory ${percent(machineLatest?.memoryPercent)}, disk free ${percent(machineLatest?.diskFreePercent)}. Select for details.`}
-                aria-pressed={selected}
-                aria-controls="machine-detail"
-                onClick={() => selectMachine(machine.id)}
                 className={cn(
-                  "group relative min-h-[236px] w-full cursor-pointer overflow-hidden rounded-xl border p-4 text-left shadow-dark-tremor-card transition-[transform,border-color,background-color,box-shadow] duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 motion-reduce:transform-none sm:p-5",
+                  "group relative flex min-h-[236px] w-full flex-col overflow-hidden rounded-xl border text-left shadow-dark-tremor-card transition-[transform,border-color,background-color,box-shadow] duration-200 motion-reduce:transform-none",
                   selected
                     ? "border-emerald-400/70 bg-emerald-400/[0.07] shadow-[0_0_28px_rgba(74,222,128,0.08)]"
-                    : "border-pulse-border/80 bg-pulse-surface/80 hover:-translate-y-0.5 hover:border-slate-500 hover:bg-slate-900/95 hover:shadow-lg"
+                    : "border-pulse-border/80 bg-pulse-surface/80 hover:-translate-y-0.5 hover:border-slate-500 hover:bg-slate-900/95 hover:shadow-lg",
+                  focused && "ring-1 ring-inset ring-blue-400/60"
                 )}
               >
-                <span className="flex items-start justify-between gap-3">
-                  <span className="flex min-w-0 items-center gap-3">
-                    <span className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-lg ring-1", toneClasses[status.tone])}>
-                      <RiWindowsLine aria-hidden="true" className="h-5 w-5" />
+                <button
+                  type="button"
+                  aria-label={`${selected ? "Deselect" : "Select"} ${machine.hostname}, ${status.label}, CPU ${percent(machineLatest?.cpuPercent)}, memory ${percent(machineLatest?.memoryPercent)}, disk free ${percent(machineLatest?.diskFreePercent)}.`}
+                  aria-pressed={selected}
+                  onClick={() => toggleMachine(machine.id)}
+                  className="w-full flex-1 cursor-pointer p-4 pb-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400 sm:p-5 sm:pb-4"
+                >
+                  <span className="flex items-start justify-between gap-3">
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-lg ring-1", toneClasses[status.tone])}>
+                        <RiWindowsLine aria-hidden="true" className="h-5 w-5" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-mono text-base font-semibold text-white">{machine.hostname}</span>
+                        <span className="mt-0.5 block truncate text-xs text-slate-500">{roleLabel(machine.role)} · {machine.environment}</span>
+                      </span>
                     </span>
-                    <span className="min-w-0">
-                      <span className="block truncate font-mono text-base font-semibold text-white">{machine.hostname}</span>
-                      <span className="mt-0.5 block truncate text-xs text-slate-500">{roleLabel(machine.role)} · {machine.environment}</span>
-                    </span>
+                    {selected
+                      ? <RiCheckboxCircleFill aria-hidden="true" className="h-5 w-5 shrink-0 text-emerald-300" />
+                      : <span aria-hidden="true" className={cn("mt-1 h-3 w-3 shrink-0 rounded-full ring-2 ring-slate-700", status.tone === "green" ? "bg-emerald-400" : status.tone === "amber" ? "bg-amber-400" : "bg-red-400")} />}
                   </span>
-                  {selected
-                    ? <RiCheckboxCircleFill aria-hidden="true" className="h-5 w-5 shrink-0 text-emerald-300" />
-                    : <span aria-hidden="true" className={cn("mt-1 h-2.5 w-2.5 shrink-0 rounded-full", status.tone === "green" ? "bg-emerald-400" : status.tone === "amber" ? "bg-amber-400" : "bg-red-400")} />}
-                </span>
 
-                <span className="mt-4 grid grid-cols-3 gap-2">
-                  <TelemetryCell icon={RiCpuLine} label="CPU" value={percent(machineLatest?.cpuPercent)} />
-                  <TelemetryCell icon={RiRam2Line} label="RAM" value={percent(machineLatest?.memoryPercent)} />
-                  <TelemetryCell icon={RiHardDrive3Line} label="Disk" value={percent(machineLatest?.diskFreePercent)} />
-                </span>
+                  <span className="mt-4 grid grid-cols-3 gap-2">
+                    <TelemetryCell icon={RiCpuLine} label="CPU" value={percent(machineLatest?.cpuPercent)} />
+                    <TelemetryCell icon={RiRam2Line} label="RAM" value={percent(machineLatest?.memoryPercent)} />
+                    <TelemetryCell icon={RiHardDrive3Line} label="Disk" value={percent(machineLatest?.diskFreePercent)} />
+                  </span>
+                </button>
 
-                <span className="mt-4 flex min-w-0 items-center justify-between gap-3 border-t border-slate-700/60 pt-3 text-xs">
-                  <span className="min-w-0 truncate text-slate-400">
-                    {machine.agent?.pool ?? "No pool"} · {formatUptime(machineLatest?.uptimeSeconds)}
-                  </span>
-                  <span className="inline-flex shrink-0 items-center gap-1 font-medium text-emerald-300 opacity-80 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
-                    Details <RiArrowDownSLine aria-hidden="true" className="h-4 w-4" />
-                  </span>
-                </span>
-              </button>
+                <div className="flex min-w-0 items-center justify-between gap-2 border-t border-slate-700/60 px-4 py-1.5 text-xs sm:px-5">
+                  <span className="min-w-0 truncate text-slate-400">{machine.agent?.pool ?? "No pool"} · {formatUptime(machineLatest?.uptimeSeconds)}</span>
+                  <button
+                    type="button"
+                    aria-label={`View details for ${machine.hostname}`}
+                    aria-pressed={focused}
+                    aria-controls="machine-detail"
+                    onClick={() => focusMachine(machine.id)}
+                    className={cn(
+                      "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg px-2.5 font-medium transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
+                      focused ? "bg-blue-400/10 text-blue-300" : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                    )}
+                  >
+                    <RiFocus3Line aria-hidden="true" className="h-4 w-4" /> {focused ? "Viewing" : "Details"}
+                  </button>
+                </div>
+              </article>
             );
           })}
         </div>
       </section>
 
-      <p className="sr-only" aria-live="polite">Selected machine: {selectedMachine.hostname}</p>
+      <p className="sr-only" aria-live="polite">{selectedMachines.length} machines selected. Details showing {selectedMachine.hostname}.</p>
 
-      <section ref={detailsRef} id="machine-detail" aria-labelledby="selected-machine-title" className="scroll-mt-24 space-y-4">
+      <section ref={detailsRef} id="machine-detail" aria-labelledby="focused-machine-title" className="scroll-mt-24 space-y-4">
         <Card className="overflow-hidden border-slate-600/80">
           <div className="border-b border-pulse-border/60 bg-gradient-to-r from-emerald-400/[0.08] to-transparent p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -343,8 +417,8 @@ export function FleetOperations({
                   <RiWindowsLine aria-hidden="true" className="h-6 w-6" />
                 </span>
                 <div className="min-w-0">
-                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-400">Selected machine</p>
-                  <h2 id="selected-machine-title" className="mt-1 break-words font-mono text-xl font-semibold text-white sm:text-2xl">{selectedMachine.hostname}</h2>
+                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-300">Focused machine</p>
+                  <h2 id="focused-machine-title" className="mt-1 break-words font-mono text-xl font-semibold text-white sm:text-2xl">{selectedMachine.hostname}</h2>
                   <p className="mt-1 text-sm text-slate-400">{roleLabel(selectedMachine.role)} · {selectedMachine.environment} · {selectedMachine.os}</p>
                 </div>
               </div>
@@ -461,24 +535,23 @@ export function FleetOperations({
             </div>
           </div>
 
-          <aside className="min-w-0 space-y-4" aria-label={`Actions and history for ${selectedMachine.hostname}`}>
+          <aside className="min-w-0 space-y-4" aria-label="Actions and history for the current selection">
             <Card id="machine-actions" className="scroll-mt-24">
               <CardHeader>
                 <div className="flex min-w-0 items-center gap-3">
                   <RiShieldCheckLine aria-hidden="true" className="h-5 w-5 shrink-0 text-emerald-300" />
-                  <div className="min-w-0"><h3 className="truncate font-semibold text-white">Actions for {selectedMachine.hostname}</h3><p className="mt-1 text-xs text-slate-500">Plan first · audit always</p></div>
+                  <div className="min-w-0"><h3 className="truncate font-semibold text-white">Actions for {selectionLabel}</h3><p className="mt-1 text-xs text-slate-500">Bulk-ready · plan first · audit always</p></div>
                 </div>
               </CardHeader>
               <CardContent>
                 <ActionPlanner
-                  key={selectedMachine.id}
-                  target={{
-                    id: selectedMachine.id,
-                    label: selectedMachine.hostname,
-                    detail: `${roleLabel(selectedMachine.role)} · ${selectedMachine.environment}`,
-                    hasReference: Boolean(selectedMachine.referenceMachineId),
-                    agentEnabled: selectedMachine.agent?.enabled
-                  }}
+                  targets={selectedMachines.map((machine) => ({
+                    id: machine.id,
+                    label: machine.hostname,
+                    detail: `${roleLabel(machine.role)} · ${machine.environment}`,
+                    hasReference: Boolean(machine.referenceMachineId),
+                    agentEnabled: machine.agent?.enabled
+                  }))}
                   onPlanCreated={() => router.refresh()}
                 />
               </CardContent>
@@ -488,7 +561,7 @@ export function FleetOperations({
               <CardHeader>
                 <div className="flex min-w-0 items-center gap-3">
                   <RiHistoryLine aria-hidden="true" className="h-5 w-5 shrink-0 text-blue-300" />
-                  <div className="min-w-0"><h3 className="font-semibold text-white">Action history</h3><p className="mt-1 truncate text-xs text-slate-500">{selectedMachine.hostname} audit trail</p></div>
+                  <div className="min-w-0"><h3 className="font-semibold text-white">Selection audit trail</h3><p className="mt-1 truncate text-xs text-slate-500">Actions touching {selectionLabel.toLowerCase()}</p></div>
                 </div>
                 <span className="font-mono text-xs text-slate-500">{selectedActions.length}</span>
               </CardHeader>
@@ -506,7 +579,7 @@ export function FleetOperations({
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-medium text-slate-200">{option.label}</p><StatusBadge status={action.status} /></div>
                             <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{action.reason}</p>
-                            <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-600"><span>{action.requestedBy}</span><span aria-hidden="true">·</span><time dateTime={action.requestedAt.toISOString()}>{formatRelativeTime(action.requestedAt, generatedAt)}</time></p>
+                            <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-600"><span>{action.requestedBy}</span><span aria-hidden="true">·</span><span>{action.targets.length} {action.targets.length === 1 ? "target" : "targets"}</span><span aria-hidden="true">·</span><time dateTime={action.requestedAt.toISOString()}>{formatRelativeTime(action.requestedAt, generatedAt)}</time></p>
                           </div>
                         </div>
                       </li>
@@ -516,8 +589,8 @@ export function FleetOperations({
               ) : (
                 <CardContent className="text-center">
                   <RiHistoryLine aria-hidden="true" className="mx-auto h-7 w-7 text-slate-600" />
-                  <p className="mt-2 text-sm font-medium text-slate-300">No actions for this machine</p>
-                  <p className="mt-1 text-xs text-slate-500">New plans will appear here with their audit status.</p>
+                  <p className="mt-2 text-sm font-medium text-slate-300">No actions for this selection</p>
+                  <p className="mt-1 text-xs text-slate-500">New bulk plans will appear here with their audit status.</p>
                 </CardContent>
               )}
             </Card>

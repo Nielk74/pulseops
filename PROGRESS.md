@@ -25,6 +25,7 @@ are present so those capabilities can be added safely.
 - [x] Add typed action plans, allow-listing, audit history, and a role boundary.
 - [x] Consolidate fleet inventory, machine detail, action planning, and audit
       history into one selectable-card workspace.
+- [x] Add true multi-machine selection, focused detail, and bulk action planning.
 - [x] Add unit/browser tests, CI, Docker packaging, and developer documentation.
 - [x] Validate lint, types, tests, migration, seed, production build, and audit.
 - [x] Push the implementation and open a draft pull request.
@@ -96,3 +97,6 @@ development defaults to all mocked and production defaults to all live.
 - Replaced the Fleet table and separate Actions/detail screens with selectable
   machine cards, hover/focus telemetry, in-place configuration detail,
   icon-led action planning, and a machine-specific audit trail.
+- Corrected Fleet card selection to be additive, separated focused detail from
+  selection, added select-all/clear controls, and made action plans and history
+  operate on the complete selected machine set.
