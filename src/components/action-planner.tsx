@@ -105,27 +105,56 @@ export function getMachineActionOption(type: string): ActionOption {
   };
 }
 
+interface ActionTarget {
+  id: string;
+  label: string;
+  detail: string;
+  hasReference: boolean;
+  agentEnabled?: boolean;
+}
+
+function getDisabledReason(type: ActionType, targets: ActionTarget[]) {
+  if (targets.length === 0) return "Select machines";
+  if (targets.length > 50) return "Maximum 50 targets";
+
+  if (["SYNC_PACKAGES_FROM_REFERENCE", "SYNC_ENV_FROM_REFERENCE"].includes(type)) {
+    const withoutReference = targets.filter((target) => !target.hasReference).length;
+    if (withoutReference) return `${withoutReference} without reference`;
+  }
+
+  if (["ENABLE_AGENT", "DISABLE_AGENT"].includes(type)) {
+    const withoutAgent = targets.filter((target) => target.agentEnabled === undefined).length;
+    if (withoutAgent) return `${withoutAgent} without agent`;
+    const incompatible = type === "ENABLE_AGENT"
+      ? targets.filter((target) => target.agentEnabled).length
+      : targets.filter((target) => !target.agentEnabled).length;
+    if (incompatible) return `${incompatible} already ${type === "ENABLE_AGENT" ? "enabled" : "disabled"}`;
+  }
+
+  return undefined;
+}
+
 export function ActionPlanner({
-  target,
+  targets,
   onPlanCreated
 }: {
-  target: {
-    id: string;
-    label: string;
-    detail: string;
-    hasReference: boolean;
-    agentEnabled?: boolean;
-  };
+  targets: ActionTarget[];
   onPlanCreated?: (actionId: string) => void;
 }) {
   const [pending, setPending] = useState(false);
   const [selectedType, setSelectedType] = useState<ActionType>("REFRESH_MACHINE");
   const [reason, setReason] = useState("");
-  const [result, setResult] = useState<{ ok: boolean; message: string; actionId?: string }>();
+  const [result, setResult] = useState<{ ok: boolean; message: string; actionId?: string; targetSignature: string }>();
   const selectedOption = getMachineActionOption(selectedType);
+  const targetSignature = targets.map((target) => target.id).join(",");
+  const selectedDisabledReason = getDisabledReason(selectedType, targets);
+  const visibleResult = result?.targetSignature === targetSignature ? result : undefined;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const submittedTargets = [...targets];
+    const submittedSignature = submittedTargets.map((target) => target.id).join(",");
+    if (getDisabledReason(selectedType, submittedTargets)) return;
     setPending(true);
     setResult(undefined);
     try {
@@ -134,7 +163,7 @@ export function ActionPlanner({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           type: selectedType,
-          targets: [target.id],
+          targets: submittedTargets.map((target) => target.id),
           parameters: {},
           reason
         })
@@ -144,12 +173,13 @@ export function ActionPlanner({
       setResult({
         ok: true,
         actionId: body.actionId,
-        message: `${selectedOption.label} plan recorded for ${target.label}. Review is required before execution.`
+        targetSignature: submittedSignature,
+        message: `${selectedOption.label} plan recorded for ${submittedTargets.length === 1 ? submittedTargets[0].label : `${submittedTargets.length} machines`}. Review is required before execution.`
       });
       setReason("");
       if (body.actionId) onPlanCreated?.(body.actionId);
     } catch (error) {
-      setResult({ ok: false, message: error instanceof Error ? error.message : String(error) });
+      setResult({ ok: false, message: error instanceof Error ? error.message : String(error), targetSignature: submittedSignature });
     } finally {
       setPending(false);
     }
@@ -157,13 +187,24 @@ export function ActionPlanner({
 
   return (
     <form onSubmit={submit} className="space-y-5">
-      <div className="flex min-w-0 items-center gap-3 rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+      <div className="flex min-w-0 items-start gap-3 rounded-lg border border-slate-700 bg-slate-950/60 p-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-emerald-400/10 text-emerald-300 ring-1 ring-emerald-400/20">
           <RiComputerLine aria-hidden="true" className="h-5 w-5" />
         </span>
-        <div className="min-w-0">
-          <p className="truncate font-mono text-sm font-semibold text-white">{target.label}</p>
-          <p className="truncate text-xs text-slate-500">{target.detail}</p>
+        <div className="min-w-0 flex-1">
+          <p className="font-mono text-sm font-semibold text-white">
+            {targets.length ? `${targets.length} ${targets.length === 1 ? "machine" : "machines"} selected` : "No machines selected"}
+          </p>
+          {targets.length ? (
+            <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Selected action targets">
+              {targets.slice(0, 6).map((target) => (
+                <span key={target.id} title={target.detail} className="max-w-full truncate rounded-md bg-slate-800 px-2 py-1 font-mono text-[11px] text-slate-300 ring-1 ring-slate-700">
+                  {target.label}
+                </span>
+              ))}
+              {targets.length > 6 ? <span className="rounded-md px-2 py-1 text-[11px] text-slate-500">+{targets.length - 6} more</span> : null}
+            </div>
+          ) : <p className="mt-1 text-xs text-amber-300">Select one or more cards to enable actions.</p>}
         </div>
       </div>
 
@@ -174,18 +215,7 @@ export function ActionPlanner({
           {machineActionOptions.map((option) => {
             const Icon = option.icon;
             const selected = selectedType === option.value;
-            const syncAction = ["SYNC_PACKAGES_FROM_REFERENCE", "SYNC_ENV_FROM_REFERENCE"].includes(option.value);
-            const disabledReason = syncAction && !target.hasReference
-              ? "No reference"
-              : option.value === "ENABLE_AGENT" && target.agentEnabled === undefined
-                ? "No agent"
-                : option.value === "ENABLE_AGENT" && target.agentEnabled
-                  ? "Already enabled"
-                  : option.value === "DISABLE_AGENT" && target.agentEnabled === undefined
-                    ? "No agent"
-                    : option.value === "DISABLE_AGENT" && !target.agentEnabled
-                      ? "Already disabled"
-                      : undefined;
+            const disabledReason = getDisabledReason(option.value, targets);
             return (
               <label key={option.value} title={disabledReason ?? option.description} className={cn("relative", disabledReason ? "cursor-not-allowed" : "cursor-pointer")}>
                 <input
@@ -226,9 +256,9 @@ export function ActionPlanner({
       </div>
 
       <div>
-        <label htmlFor={`action-reason-${target.id}`} className="mb-2 block text-sm font-medium text-slate-200">Operational reason</label>
+        <label htmlFor="action-reason-fleet-selection" className="mb-2 block text-sm font-medium text-slate-200">Operational reason</label>
         <textarea
-          id={`action-reason-${target.id}`}
+          id="action-reason-fleet-selection"
           name="reason"
           rows={3}
           className="field min-h-24 py-3"
@@ -241,27 +271,27 @@ export function ActionPlanner({
         <p className="mt-2 text-xs text-slate-500">The reason is stored in the immutable audit record.</p>
       </div>
 
-      <button className="button-primary w-full" disabled={pending} type="submit">
+      <button className="button-primary w-full" disabled={pending || Boolean(selectedDisabledReason)} type="submit">
         {pending
           ? <RiLoader4Line aria-hidden="true" className="h-4 w-4 animate-spin motion-reduce:animate-none" />
           : <RiShieldCheckLine aria-hidden="true" className="h-4 w-4" />}
-        {pending ? "Creating plan…" : "Review and create plan"}
+        {pending ? "Creating plan…" : selectedDisabledReason ?? "Review and create plan"}
       </button>
 
-      {result ? (
+      {visibleResult ? (
         <div role="status" className={cn(
           "flex gap-3 rounded-lg border p-4 text-sm",
-          result.ok
+          visibleResult.ok
             ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
             : "border-red-500/30 bg-red-500/10 text-red-200"
         )}>
-          {result.ok
+          {visibleResult.ok
             ? <RiCheckboxCircleLine aria-hidden="true" className="h-5 w-5 shrink-0" />
             : <RiErrorWarningLine aria-hidden="true" className="h-5 w-5 shrink-0" />}
           <div className="min-w-0">
-            <p>{result.message}</p>
-            {result.actionId ? <p className="mt-1 break-all font-mono text-xs opacity-80">{result.actionId}</p> : null}
-            {!result.ok ? <p className="mt-1 text-xs opacity-80">Set AUTH_DEFAULT_ROLE=OPERATOR for local planning, or provide trusted SSO headers.</p> : null}
+            <p>{visibleResult.message}</p>
+            {visibleResult.actionId ? <p className="mt-1 break-all font-mono text-xs opacity-80">{visibleResult.actionId}</p> : null}
+            {!visibleResult.ok ? <p className="mt-1 text-xs opacity-80">Set AUTH_DEFAULT_ROLE=OPERATOR for local planning, or provide trusted SSO headers.</p> : null}
           </div>
         </div>
       ) : null}

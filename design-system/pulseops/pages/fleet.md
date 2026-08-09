@@ -1,50 +1,45 @@
 # Fleet Page Overrides
 
 > **PROJECT:** PulseOps
-> **Generated:** 2026-08-10 01:22:35
-> **Page Type:** Dashboard / Data View
+> **Updated:** 2026-08-10
+> **Page Type:** Operations dashboard / fleet workspace
 
-> ⚠️ **IMPORTANT:** Rules in this file **override** the Master file (`design-system/MASTER.md`).
-> Only deviations from the Master are documented here. For all other rules, refer to the Master.
+Rules here override the master design system only for Fleet operations.
 
----
+## Layout
 
-## Page-Specific Rules
+- Keep inventory, focused machine detail, actions, and audit history on one page.
+- Use a centered 1200px maximum width with full-width sections and responsive
+  machine cards: one column on mobile, two on tablet, and three on wide screens.
+- Keep the visible selection toolbar directly above the machine-card grid.
 
-### Layout Overrides
+## Selection and focus
 
-- **Max Width:** 1200px (standard)
-- **Layout:** Full-width sections, centered content
-- **Sections:** 1. Hero (product + live preview or status), 2. Key metrics/indicators, 3. How it works, 4. CTA (Start trial / Contact)
+- Card-body activation toggles additive selection; it never clears other cards
+  and never scrolls the page. Modifier keys are not required.
+- A separate 44px-minimum `Details` control focuses a machine and scrolls to its
+  detail panel. Focus and selection are distinct, visible states.
+- Selected cards use the emerald accent and a check icon. The card whose details
+  are open also receives a blue focus treatment and `Viewing` label.
+- Always expose selected count, `Select all`, and `Clear` controls. Announce both
+  selection count and focused machine through a polite live region.
+- Persist the focused machine in `machine` and selected IDs in `targets` query
+  parameters so refreshes and shared links preserve workspace state.
 
-### Spacing Overrides
+## Bulk actions
 
-- No overrides — use Master spacing
+- The action planner targets the complete selected set and shows machine chips
+  before action choice. With no selection, all actions stay unavailable.
+- Disable an action when any selected machine is incompatible and state the
+  number of incompatible machines (for example, `1 without reference`).
+- Audit history includes actions touching any selected machine and shows each
+  action's target count.
 
-### Typography Overrides
+## Interaction and accessibility
 
-- No overrides — use Master typography
-
-### Color Overrides
-
-- **Strategy:** Dark or neutral. Status colors (green/amber/red). Data-dense but scannable.
-
-### Component Overrides
-
-- Avoid: Leave UI frozen with no feedback
-- Avoid: Single large bundle
-
----
-
-## Page-Specific Components
-
-- No unique components for this page
-
----
-
-## Recommendations
-
-- Effects: Number animations (count-up), trend direction indicators, percentage change animations, profit/loss color transitions
-- Animation: Use skeleton screens or spinners
-- Performance: Split code by route/feature
-- CTA Placement: Primary CTA in nav + After metrics
+- Hover may enrich telemetry styling, but all useful information remains visible
+  on touch and keyboard input.
+- Keep visible focus rings, semantic pressed states, icon-plus-text actions, and
+  minimum 44px touch targets. Respect reduced motion.
+- Use 200ms color, border, and elevation transitions; avoid layout-shifting
+  animations and horizontal overflow at 390px.

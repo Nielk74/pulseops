@@ -33,20 +33,56 @@ test("test anomaly opens a ranked explanation", async ({ page }) => {
   await expect(page.getByText("PricingApi", { exact: true }).first()).toBeVisible();
 });
 
-test("fleet selection, detail, and actions stay in one workspace", async ({ page }, testInfo) => {
+test("fleet supports additive card selection and bulk actions in one workspace", async ({ page }, testInfo) => {
+  let submittedTargets: string[] = [];
+  await page.route("**/api/actions/plan", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    const body = route.request().postDataJSON() as { targets: string[] };
+    submittedTargets = body.targets;
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({ actionId: "action-bulk-browser-test" })
+    });
+  });
+
   await page.goto("/fleet");
   await expect(page.getByRole("heading", { name: "Fleet operations" })).toBeVisible();
   await expect(page.getByRole("radio", { name: /Sync packages/ })).toBeDisabled();
+  const selectionControls = page.locator('[aria-label="Fleet selection controls"]');
+  await expect(selectionControls.getByText("1 machine selected", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Deselect BUILD-01,/ })).toHaveAttribute("aria-pressed", "true");
 
-  const machineCard = page.getByRole("button", { name: /^UFT-03,/ });
-  await machineCard.click();
-  await expect(machineCard).toHaveAttribute("aria-pressed", "true");
-  await expect(page).toHaveURL(/\/fleet\?machine=machine-uft-03#machine-detail$/);
+  await page.getByRole("button", { name: /^Select UFT-03,/ }).click();
+  await expect(page.getByRole("button", { name: /^Deselect BUILD-01,/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: /^Deselect UFT-03,/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(selectionControls.getByText("2 machines selected", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Actions for 2 machines" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: /Sync packages/ })).toBeDisabled();
+
+  await page.getByRole("button", { name: "View details for UFT-03" }).click();
+  await expect.poll(() => page.evaluate(() => ({
+    machine: new URL(window.location.href).searchParams.get("machine"),
+    targets: new URL(window.location.href).searchParams.get("targets"),
+    hash: window.location.hash
+  }))).toEqual({
+    machine: "machine-uft-03",
+    targets: "machine-build-01,machine-uft-03",
+    hash: "#machine-detail"
+  });
   await expect(page.getByRole("heading", { name: "UFT-03", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Actions for UFT-03" })).toBeVisible();
   await expect(page.getByRole("radio", { name: /Refresh machine/ })).toBeChecked();
-  await expect(page.getByRole("radio", { name: /Sync packages/ })).toBeEnabled();
   await expect(page.getByRole("list", { name: "UFT-03 packages" }).getByText("googlechrome", { exact: true })).toBeVisible();
+
+  await page.getByLabel("Operational reason").fill("Verify health across the selected build and test machines.");
+  await page.getByRole("button", { name: "Review and create plan" }).click();
+  await expect(page.getByRole("status")).toContainText("2 machines");
+  expect(submittedTargets).toEqual(["machine-build-01", "machine-uft-03"]);
+
+  await page.getByRole("button", { name: /^Deselect BUILD-01,/ }).click();
+  await expect(selectionControls.getByText("1 machine selected", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Actions for UFT-03" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: /Sync packages/ })).toBeEnabled();
 
   if (testInfo.project.name.startsWith("mobile")) await expectNoHorizontalOverflow(page);
 
