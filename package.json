@@ -1,0 +1,61 @@
+{
+  "name": "pulseops",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Correlate CI builds, tests, deployments, services, commits, machines, and database health.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "postbuild": "node scripts/prepare-standalone.mjs",
+    "start": "node scripts/start-standalone.mjs",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/server/db/migrate.ts",
+    "db:check": "tsx scripts/check-data.ts",
+    "db:seed": "tsx src/server/db/seed.ts",
+    "sync": "tsx scripts/sync.ts"
+  },
+  "dependencies": {
+    "@fontsource-variable/fira-code": "^5.3.0",
+    "@fontsource/fira-sans": "^5.3.0",
+    "@remixicon/react": "^4.9.0",
+    "@tanstack/react-table": "^9.1.2",
+    "better-sqlite3": "^13.0.3",
+    "clsx": "^2.1.1",
+    "drizzle-orm": "^0.45.2",
+    "next": "16.3.0",
+    "oracledb": "^6.9.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "recharts": "^3.10.1",
+    "zod": "^4.0.17"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@tailwindcss/forms": "^0.5.10",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.3.0",
+    "@types/oracledb": "^7.0.2",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitest/coverage-v8": "^3.2.4",
+    "autoprefixer": "^10.4.21",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^9.34.0",
+    "eslint-config-next": "16.3.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

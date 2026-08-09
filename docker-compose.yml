@@ -1,0 +1,14 @@
+services:
+  pulseops:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      MOCK_ALL: "true"
+      ENABLE_POLLING: "true"
+      AUTH_DEFAULT_ROLE: "OPERATOR"
+    volumes:
+      - pulseops-data:/app/data
+
+volumes:
+  pulseops-data:
