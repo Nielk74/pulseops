@@ -98,8 +98,32 @@ test("fleet supports additive card selection and bulk actions in one workspace",
   await expect(page.getByRole("heading", { name: "Actions for 2 machines" })).toBeVisible();
   await expect(page.getByRole("radio", { name: /Sync packages/ })).toBeDisabled();
 
-  const workspaceBeforeModal = await page.locator("#main-content").boundingBox();
-  expect(workspaceBeforeModal).not.toBeNull();
+  const backgroundRegions = [
+    { name: "workspace", locator: page.locator("#main-content") },
+    { name: "machine grid", locator: page.locator('section[aria-labelledby="machine-grid-title"]') },
+    { name: "action rail", locator: page.locator("#machine-actions") },
+    { name: "first machine card", locator: page.getByRole("button", { name: /^Deselect BUILD-01,/ }) }
+  ];
+  const getBackgroundGeometry = () => Promise.all(backgroundRegions.map(async ({ name, locator }) => {
+    const box = await locator.boundingBox();
+    if (!box) throw new Error(`Could not measure ${name}`);
+    return { name, x: box.x, width: box.width };
+  }));
+  const backgroundBeforeModal = await getBackgroundGeometry();
+  const bodyPaddingBeforeModal = await page.evaluate(() => document.body.style.paddingRight);
+  if (testInfo.project.name === "desktop-chrome") {
+    // Headless Chromium uses overlay scrollbars. Emulate the 15px viewport
+    // expansion from a classic scrollbar disappearing during scroll lock.
+    await page.evaluate(() => {
+      const root = document.documentElement;
+      const unlockedWidth = root.clientWidth;
+      let readCount = 0;
+      Object.defineProperty(root, "clientWidth", {
+        configurable: true,
+        get: () => (readCount++ === 0 ? unlockedWidth - 15 : unlockedWidth)
+      });
+    });
+  }
   const detailsTrigger = page.getByRole("button", { name: "View details for UFT-03" });
   await detailsTrigger.click();
   await expect.poll(() => page.evaluate(() => ({
@@ -113,19 +137,25 @@ test("fleet supports additive card selection and bulk actions in one workspace",
   });
   const machineDialog = page.getByRole("dialog", { name: "UFT-03 details" });
   await expect(machineDialog).toBeVisible();
-  const workspaceDuringModal = await page.locator("#main-content").boundingBox();
-  expect(workspaceDuringModal).not.toBeNull();
-  expect(workspaceDuringModal!.x).toBeCloseTo(workspaceBeforeModal!.x, 1);
-  expect(workspaceDuringModal!.width).toBeCloseTo(workspaceBeforeModal!.width, 1);
+  const backgroundDuringModal = await getBackgroundGeometry();
+  for (const [index, region] of backgroundDuringModal.entries()) {
+    expect(region.x, `${region.name} shifted horizontally while the modal opened`).toBeCloseTo(backgroundBeforeModal[index].x, 1);
+    expect(region.width, `${region.name} changed width while the modal opened`).toBeCloseTo(backgroundBeforeModal[index].width, 1);
+  }
+  await expect.poll(() => page.evaluate(() => document.body.style.paddingRight)).toBe(bodyPaddingBeforeModal);
   await expect(machineDialog.getByRole("heading", { name: "UFT-03", exact: true })).toBeVisible();
   await expect(machineDialog.getByRole("list", { name: "UFT-03 packages" }).getByText("googlechrome", { exact: true })).toBeVisible();
   await machineDialog.getByRole("button", { name: "Close UFT-03 details" }).click();
   await expect(machineDialog).not.toBeVisible();
   await expect(detailsTrigger).toBeFocused();
-  const workspaceAfterModal = await page.locator("#main-content").boundingBox();
-  expect(workspaceAfterModal).not.toBeNull();
-  expect(workspaceAfterModal!.x).toBeCloseTo(workspaceBeforeModal!.x, 1);
-  expect(workspaceAfterModal!.width).toBeCloseTo(workspaceBeforeModal!.width, 1);
+  if (testInfo.project.name === "desktop-chrome") {
+    await page.evaluate(() => Reflect.deleteProperty(document.documentElement, "clientWidth"));
+  }
+  const backgroundAfterModal = await getBackgroundGeometry();
+  for (const [index, region] of backgroundAfterModal.entries()) {
+    expect(region.x, `${region.name} shifted horizontally after the modal closed`).toBeCloseTo(backgroundBeforeModal[index].x, 1);
+    expect(region.width, `${region.name} changed width after the modal closed`).toBeCloseTo(backgroundBeforeModal[index].width, 1);
+  }
   await expect(page.getByRole("radio", { name: /Refresh machine/ })).toBeChecked();
 
   await page.getByLabel("Operational reason").fill("Verify health across the selected build and test machines.");
