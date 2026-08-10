@@ -26,6 +26,7 @@ test("overview exposes correlated operational health", async ({ page }) => {
 });
 
 test("test anomaly opens a ranked explanation", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/tests");
   await page.getByRole("link", { name: "UFT Pricing", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Test explanation" });
@@ -33,6 +34,11 @@ test("test anomaly opens a ranked explanation", async ({ page }) => {
   await expect(dialog.getByRole("heading", { name: "UFT Pricing" })).toBeVisible();
   await expect(dialog.getByText("Most likely cause")).toBeVisible();
   await expect(dialog.getByText("PricingApi", { exact: true }).first()).toBeVisible();
+  await expect(dialog).toHaveAttribute("data-state", "open");
+  const transitionDuration = await dialog.locator(".app-modal-panel").evaluate((panel) =>
+    Number.parseFloat(window.getComputedStyle(panel).transitionDuration)
+  );
+  expect(transitionDuration).toBeGreaterThanOrEqual(0.2);
   await dialog.getByRole("button", { name: "Close Test explanation" }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page).toHaveURL(/\/tests$/);

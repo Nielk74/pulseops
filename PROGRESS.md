@@ -105,3 +105,5 @@ development defaults to all mocked and production defaults to all live.
 - Moved machine and TeamCity agent details into a responsive modal, relocated
   Fleet actions and audit history beside the card grid, and introduced the same
   URL-backed modal drill-down pattern for builds, tests, services, and commits.
+- Added coordinated scrim and surface transitions to every shared detail modal,
+  including a faster animated exit and a no-displacement reduced-motion path.

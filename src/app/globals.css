@@ -42,6 +42,41 @@ body {
 }
 
 @layer components {
+  .app-modal::backdrop {
+    background-color: rgb(0 0 0 / 0%);
+    -webkit-backdrop-filter: blur(0);
+    backdrop-filter: blur(0);
+    transition-duration: 160ms;
+    transition-property: background-color, backdrop-filter, -webkit-backdrop-filter;
+    transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+  }
+  .app-modal[data-state="open"]::backdrop {
+    background-color: rgb(0 0 0 / 75%);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    transition-duration: 220ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .app-modal-panel {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0) scale(0.995);
+    transform-origin: 50% 48%;
+    transition-duration: 160ms;
+    transition-property: opacity, transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+    will-change: opacity, transform;
+  }
+  .app-modal[data-state="open"] .app-modal-panel {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    transition-duration: 240ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @media (min-width: 640px) {
+    .app-modal-panel {
+      transform: translate3d(0, 12px, 0) scale(0.985);
+    }
+  }
   .data-table-wrap { @apply overflow-x-auto rounded-xl border border-pulse-border/80 bg-pulse-surface/80; }
   .data-table { @apply min-w-full divide-y divide-pulse-border/70 text-left text-sm; }
   .data-table thead { @apply bg-slate-900/80 text-[11px] uppercase tracking-[0.12em] text-slate-500; }
@@ -52,4 +87,20 @@ body {
   .button-primary { @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-emerald-400 px-4 text-sm font-semibold text-slate-950 transition-colors hover:bg-emerald-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-40; }
   .button-secondary { @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-600 bg-slate-900 px-4 text-sm font-semibold text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:cursor-not-allowed disabled:opacity-40; }
   .field { @apply min-h-11 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 text-base text-slate-100 placeholder:text-slate-600 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 sm:text-sm; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-modal::backdrop,
+  .app-modal[data-state="open"]::backdrop {
+    background-color: rgb(0 0 0 / 75%);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+
+  .app-modal-panel,
+  .app-modal[data-state="open"] .app-modal-panel {
+    opacity: 1;
+    transform: none;
+    will-change: auto;
+  }
 }
