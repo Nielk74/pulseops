@@ -1,6 +1,7 @@
 import { RiInformationLine, RiLock2Line } from "@remixicon/react";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
+import { Banner } from "@/components/tremor/banner";
 import { Card, CardContent, CardHeader } from "@/components/tremor/card";
 import { loadConfig, sourceConfigurationIssue } from "@/server/config";
 import { getConnectorHealth } from "@/server/queries";
@@ -24,7 +25,11 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Configuration & freshness" title="Settings" description="Source selection is environment-driven so secrets and internal endpoints never pass through the browser." />
-      <div className="flex gap-3 rounded-xl border border-blue-400/20 bg-blue-400/[0.08] p-4 text-sm leading-6 text-blue-100"><RiInformationLine className="mt-0.5 h-5 w-5 shrink-0 text-blue-300" /><p><strong>Local default:</strong> when no mock variables are specified outside production, all sources use deterministic mocks. Set <code className="rounded bg-slate-950/60 px-1.5 py-0.5 font-mono text-xs">MOCK_ALL=false</code> to select sources individually.</p></div>
+      <Banner
+        title="Local development defaults to deterministic mocks"
+        icon={<RiInformationLine aria-hidden="true" className="h-5 w-5" />}
+        description={<>When no mock variables are specified outside production, all sources use deterministic mocks. Set <code className="rounded bg-slate-950/60 px-1.5 py-0.5 font-mono text-xs text-blue-100">MOCK_ALL=false</code> to select sources individually.</>}
+      />
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {switches.map((item) => {
           const connector = health.get(item.source);

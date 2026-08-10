@@ -160,15 +160,26 @@ export function getTestDetail(id: string) {
 }
 
 export function getServices() {
+  const samples = db.select().from(serviceStatusSamples).orderBy(desc(serviceStatusSamples.timestamp)).all();
   const latest = uniqueLatest(
-    db.select().from(serviceStatusSamples).orderBy(desc(serviceStatusSamples.timestamp)).all(),
+    samples,
     (sample) => `${sample.serviceId}:${sample.environment}`
   );
   const anomalies = db.select().from(testOccurrences).all().filter((test) => test.anomalyType !== "NONE");
-  return latest.map((service) => ({
-    ...service,
-    relatedAnomalyCount: anomalies.filter((test) => test.probableCause === service.serviceName).length
-  }));
+  return latest.map((service) => {
+    const history = samples
+      .filter((sample) => sample.serviceId === service.serviceId && sample.environment === service.environment)
+      .slice(0, 30)
+      .reverse();
+    const healthyCheckCount = history.filter((sample) => sample.status === "HEALTHY").length;
+    return {
+      ...service,
+      history,
+      healthyCheckCount,
+      healthyPercent: history.length ? Math.round((healthyCheckCount / history.length) * 1_000) / 10 : 0,
+      relatedAnomalyCount: anomalies.filter((test) => test.probableCause === service.serviceName).length
+    };
+  });
 }
 
 export function getServiceDetail(id: string) {

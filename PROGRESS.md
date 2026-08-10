@@ -28,6 +28,8 @@ are present so those capabilities can be added safely.
 - [x] Add true multi-machine selection, focused detail, and bulk action planning.
 - [x] Standardize entity drill-downs as accessible, URL-backed detail modals and
       place Fleet actions beside the machine grid.
+- [x] Audit the current Tremor Blocks catalog and add sample-backed status
+      trackers, incident bar lists, and reusable semantic banners.
 - [x] Add unit/browser tests, CI, Docker packaging, and developer documentation.
 - [x] Validate lint, types, tests, migration, seed, production build, and audit.
 - [x] Push the implementation and open a draft pull request.
@@ -47,6 +49,24 @@ development defaults to all mocked and production defaults to all live.
 | Oracle probes | `MOCK_ORACLE` | `oracledb` probes | Probe health and latency | Validated |
 | Windows machine inventory | `MOCK_MACHINES` | Inventory executor REST | Machines, packages, and drift | Validated |
 
+## Tremor block audit
+
+The UI was compared with the current official Tremor Blocks catalog. Components
+are checked into PulseOps and adapted to its domain instead of adding a runtime
+Tremor dependency.
+
+| Tremor family | PulseOps decision | Status |
+|---|---|---|
+| Cards, badges, progress bars | Existing shared primitives | In use |
+| Area, line, bar, and donut charts | Existing Recharts-backed views | In use |
+| Tables, actions, and pagination | Existing TanStack/custom table workflows | In use |
+| Filter bars, empty states, dialogs, grid lists | Existing domain-specific equivalents | In use |
+| Status monitoring / Tracker | Real service samples with hover and keyboard inspection | Added |
+| Bar Lists | Exact-value incident severity composition | Added |
+| Banners | Shared operational and configuration notices | Added |
+| Spark charts / alternate KPI cards | Existing KPI and full trend charts already answer the operator question | Deferred |
+| File uploads / browser configuration forms | Sources remain environment-driven by design | Not applicable |
+
 ## Verified baseline
 
 - Six connectors completed with zero failures.
@@ -55,7 +75,7 @@ development defaults to all mocked and production defaults to all live.
 - Designed anomalies: slow `UFT Pricing` correlated to `PricingApi`; suspiciously
   fast `UFT Login` correlated to test discovery.
 - Seven unit tests passed across anomaly statistics, detection, and correlation.
-- Eleven Playwright checks passed across desktop and 390 px mobile; one
+- Thirteen Playwright checks passed across desktop and 390 px mobile; one
   desktop duplicate of the mobile-only overflow check is intentionally skipped.
 - Production build, TypeScript, ESLint, migration, data integrity check, and
   production dependency audit passed. Production dependency findings: zero.
@@ -74,6 +94,9 @@ development defaults to all mocked and production defaults to all live.
   plan-first, role-checked, and audited; only the diagnostic refresh is executable.
 - The UI uses a responsive, dark, high-contrast operations design system with
   semantic labels, keyboard focus, reduced motion, and non-color status cues.
+- Tremor patterns are adopted only when they add an operator decision: Trackers
+  for temporal state, Bar Lists for composition, and Banners for workspace-level
+  notices. Existing charts and forms are not duplicated for catalog coverage.
 - Fleet is the canonical machine workspace. Legacy `/actions` and `/fleet/:id`
   URLs preserve bookmarks by redirecting into the selected in-page context.
 
@@ -110,3 +133,7 @@ development defaults to all mocked and production defaults to all live.
 - Kept modal background geometry stable with one root scrollbar gutter and no
   body-width mutation; added a classic-scrollbar simulation that verifies Fleet
   geometry before, during, and after the modal round-trip.
+- Re-audited the official Tremor Blocks catalog, replaced the Services table
+  with a sample-backed status-monitoring workspace, added keyboard/hover tracker
+  inspection, summarized incident pressure with a Bar List, and standardized
+  operational notices with a reusable Banner.

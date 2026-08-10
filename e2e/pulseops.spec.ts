@@ -63,6 +63,30 @@ test("build, service, and commit details share the modal pattern", async ({ page
   }
 });
 
+test("Tremor monitoring patterns expose real service and incident data", async ({ page }, testInfo) => {
+  await page.goto("/services");
+  await expect(page.getByRole("heading", { name: "Platform status" })).toBeVisible();
+  await expect(page.getByRole("note")).toContainText(/monitored services/);
+  if (testInfo.project.name.startsWith("mobile")) await expectNoHorizontalOverflow(page);
+
+  const pricingHistory = page.getByRole("group", { name: /PricingApi health history/ });
+  await expect(pricingHistory).toBeVisible();
+  await pricingHistory.focus();
+  await pricingHistory.press("Home");
+  await pricingHistory.press("ArrowRight");
+  await pricingHistory.press("ArrowRight");
+  await expect(page.getByRole("tooltip")).toContainText("degraded");
+
+  await page.goto("/incidents");
+  await expect(page.getByRole("heading", { name: "Incident pressure" })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Incidents by severity" })).toBeVisible();
+  if (testInfo.project.name.startsWith("mobile")) await expectNoHorizontalOverflow(page);
+
+  await page.goto("/settings");
+  await expect(page.getByRole("note")).toContainText("Local development defaults to deterministic mocks");
+  if (testInfo.project.name.startsWith("mobile")) await expectNoHorizontalOverflow(page);
+});
+
 test("fleet supports additive card selection and bulk actions in one workspace", async ({ page }, testInfo) => {
   let submittedTargets: string[] = [];
   await page.route("**/api/actions/plan", async (route) => {
