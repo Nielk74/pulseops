@@ -28,6 +28,7 @@ test("overview exposes correlated operational health", async ({ page }) => {
 test("test anomaly opens a ranked explanation", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/tests");
+  await expect.poll(() => page.evaluate(() => window.getComputedStyle(document.documentElement).scrollbarGutter)).toBe("stable");
   await page.getByRole("link", { name: "UFT Pricing", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Test explanation" });
   await expect(dialog).toBeVisible();
@@ -97,6 +98,8 @@ test("fleet supports additive card selection and bulk actions in one workspace",
   await expect(page.getByRole("heading", { name: "Actions for 2 machines" })).toBeVisible();
   await expect(page.getByRole("radio", { name: /Sync packages/ })).toBeDisabled();
 
+  const workspaceBeforeModal = await page.locator("#main-content").boundingBox();
+  expect(workspaceBeforeModal).not.toBeNull();
   const detailsTrigger = page.getByRole("button", { name: "View details for UFT-03" });
   await detailsTrigger.click();
   await expect.poll(() => page.evaluate(() => ({
@@ -110,11 +113,19 @@ test("fleet supports additive card selection and bulk actions in one workspace",
   });
   const machineDialog = page.getByRole("dialog", { name: "UFT-03 details" });
   await expect(machineDialog).toBeVisible();
+  const workspaceDuringModal = await page.locator("#main-content").boundingBox();
+  expect(workspaceDuringModal).not.toBeNull();
+  expect(workspaceDuringModal!.x).toBeCloseTo(workspaceBeforeModal!.x, 1);
+  expect(workspaceDuringModal!.width).toBeCloseTo(workspaceBeforeModal!.width, 1);
   await expect(machineDialog.getByRole("heading", { name: "UFT-03", exact: true })).toBeVisible();
   await expect(machineDialog.getByRole("list", { name: "UFT-03 packages" }).getByText("googlechrome", { exact: true })).toBeVisible();
   await machineDialog.getByRole("button", { name: "Close UFT-03 details" }).click();
   await expect(machineDialog).not.toBeVisible();
   await expect(detailsTrigger).toBeFocused();
+  const workspaceAfterModal = await page.locator("#main-content").boundingBox();
+  expect(workspaceAfterModal).not.toBeNull();
+  expect(workspaceAfterModal!.x).toBeCloseTo(workspaceBeforeModal!.x, 1);
+  expect(workspaceAfterModal!.width).toBeCloseTo(workspaceBeforeModal!.width, 1);
   await expect(page.getByRole("radio", { name: /Refresh machine/ })).toBeChecked();
 
   await page.getByLabel("Operational reason").fill("Verify health across the selected build and test machines.");

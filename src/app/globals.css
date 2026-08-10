@@ -17,7 +17,7 @@
 }
 
 * { border-color: var(--color-border); }
-html { background: var(--color-background); scroll-behavior: smooth; }
+html { background: var(--color-background); scroll-behavior: smooth; scrollbar-gutter: stable; }
 body {
   min-width: 320px;
   background:

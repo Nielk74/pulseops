@@ -20,6 +20,9 @@
 - Use a 75% black scrim plus restrained backdrop blur. Keep the modal surface
   opaque OLED slate with a visible border and strong elevation.
 - Keep the context bar outside the scroll region. Only detail content scrolls.
+- Reserve the root scrollbar gutter while background scrolling is locked, with
+  runtime width compensation as a fallback, so the workspace never shifts
+  horizontally when the modal opens or closes.
 - Fade and blur the scrim over 220ms while the surface eases upward 12–16px
   with a subtle scale over 240ms. Dismiss in 160–180ms so closing feels direct.
 - Remove transform and transition delays when `prefers-reduced-motion` is set.
