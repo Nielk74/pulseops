@@ -168,6 +168,21 @@
   160–180ms ease-in on exit. Disable displacement for reduced-motion users.
 - Use modals for contextual detail, not primary navigation or destructive flows.
 
+### Monitoring primitives
+
+- Use segmented trackers for compact historical state, never as decorative
+  progress bars. Every segment represents a real sample and exposes timestamp,
+  state, and the most relevant measurements on hover.
+- Give each tracker one keyboard stop. `Home`, `End`, and arrow keys inspect its
+  samples without adding dozens of tab stops; expose the active sample through
+  an accessible tooltip.
+- Use bar lists for ranked or compositional counts where relative magnitude is
+  more useful than a chart axis. Keep the exact value visible beside every bar.
+- Use semantic banners for workspace-level state and configuration guidance.
+  Pair color with an SVG icon, a concrete title, and concise supporting text.
+- Preserve the semantic palette: emerald healthy, amber degraded, red
+  unhealthy/critical, blue informational, and slate unknown.
+
 ---
 
 ## Style Guidelines

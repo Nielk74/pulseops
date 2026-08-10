@@ -17,6 +17,8 @@ evidence-backed explanation without requiring an AI model.
 - TeamCity builds, artifacts, test occurrences, and agents
 - Deployment Info API normalization
 - Services Status API snapshots and Grafana deep links
+- sample-backed service status trackers, semantic workspace banners, and
+  incident-severity bar lists adapted from Tremor monitoring patterns
 - safe local Git ingestion using argument arrays, never shell interpolation
 - lightweight Oracle connectivity, minimal SQL, and representative probes
 - Windows machine health, Chocolatey inventory, allow-listed environment values,
