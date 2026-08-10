@@ -7,7 +7,7 @@ export const metadata = { title: "Fleet operations" };
 export default async function FleetPage({
   searchParams
 }: {
-  searchParams: Promise<{ machine?: string | string[]; targets?: string | string[] }>;
+  searchParams: Promise<{ machine?: string | string[]; targets?: string | string[]; detail?: string | string[] }>;
 }) {
   const params = await searchParams;
   const machines = getFleet().flatMap((row): FleetMachineData[] => {
@@ -39,6 +39,7 @@ export default async function FleetPage({
   const initialSelectedIds = requestedTargets === undefined
     ? initialMachineId ? [initialMachineId] : []
     : [...new Set(requestedTargets.split(",").filter((id) => validMachineIds.has(id)))];
+  const requestedDetail = Array.isArray(params.detail) ? params.detail[0] : params.detail;
 
   return (
     <FleetOperations
@@ -46,6 +47,7 @@ export default async function FleetPage({
       actions={getActions()}
       initialMachineId={initialMachineId}
       initialSelectedIds={initialSelectedIds}
+      initialDetailOpen={requestedDetail === "machine"}
       generatedAt={new Date()}
     />
   );

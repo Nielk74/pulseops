@@ -25,7 +25,7 @@ export default async function TestDetailPage({ params }: { params: Promise<{ id:
   const delta = explanation?.anomaly.deltaPercent ?? 0;
   return (
     <div className="space-y-6">
-      <Link href="/tests" className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"><RiArrowLeftLine aria-hidden="true" className="h-4 w-4" /> Back to tests</Link>
+      <Link data-detail-back href="/tests" className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"><RiArrowLeftLine aria-hidden="true" className="h-4 w-4" /> Back to tests</Link>
       <PageHeader
         eyebrow="Explain this run"
         title={occurrence.testName}

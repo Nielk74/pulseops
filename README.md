@@ -22,7 +22,9 @@ evidence-backed explanation without requiring an AI model.
 - Windows machine health, Chocolatey inventory, allow-listed environment values,
   and reference-machine drift
 - a single Fleet operations workspace with additive multi-select machine cards,
-  focused health detail, bulk action planning, and selection-aware audit history
+  a right-side bulk-action rail, modal machine/agent detail, and selection-aware audit history
+- URL-backed detail modals for builds, tests, services, and commits, with direct
+  full-page routes retained for bookmarks and refreshes
 - median/MAD slow-test detection and suspiciously fast-run detection
 - deterministic evidence scoring across services, Oracle, machines,
   deployments, commits, and test discovery

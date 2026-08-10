@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { RiArrowRightSLine, RiArrowUpDownLine, RiFlaskLine } from "@remixicon/react";
+import { RiArrowUpDownLine, RiEyeLine, RiFlaskLine } from "@remixicon/react";
 import {
   createColumnHelper,
   createSortedRowModel,
@@ -49,7 +49,7 @@ const columns = columnHelper.columns([
   columnHelper.accessor("deltaPercent", { header: "Delta", cell: ({ getValue }) => { const value = getValue(); return <span className={`font-mono tabular-nums ${Math.abs(value) >= 20 ? "text-amber-300" : "text-slate-400"}`}>{formatPercent(value, { signed: true })}</span>; } }),
   columnHelper.accessor("anomalyType", { header: "Status", cell: ({ getValue }) => { const status = getValue(); return <StatusBadge status={status === "NONE" ? "HEALTHY" : status} label={status === "NONE" ? "Normal" : status === "FAST" ? "Suspicious" : "Slow"} />; } }),
   columnHelper.accessor("probableCause", { header: "Probable cause", cell: ({ getValue }) => <span className="block max-w-48 truncate">{getValue() ?? "—"}</span> }),
-  columnHelper.display({ id: "open", enableSorting: false, header: () => <span className="sr-only">Open</span>, cell: ({ row }) => <Link href={`/tests/${row.original.id}`} aria-label={`Explain ${row.original.testName}`} className="grid h-11 w-11 place-items-center rounded-lg text-slate-500 hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"><RiArrowRightSLine aria-hidden="true" className="h-5 w-5" /></Link> })
+  columnHelper.display({ id: "open", enableSorting: false, header: () => <span className="sr-only">Open</span>, cell: ({ row }) => <Link href={`/tests/${row.original.id}`} aria-label={`Explain ${row.original.testName}`} className="grid h-11 w-11 place-items-center rounded-lg text-slate-500 hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"><RiEyeLine aria-hidden="true" className="h-5 w-5" /></Link> })
 ]);
 
 export function TestsTable({ data }: { data: TestTableRow[] }) {

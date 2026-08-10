@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { RiArrowRightSLine } from "@remixicon/react";
+import { RiEyeLine } from "@remixicon/react";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { getBuilds } from "@/server/queries";
@@ -26,7 +26,7 @@ export default function BuildsPage() {
               <td className="font-mono tabular-nums">{build.artifactCount}</td>
               <td><StatusBadge status={build.testAnomalyCount > 0 ? "HIGH" : "HEALTHY"} label={String(build.testAnomalyCount)} /></td>
               <td>{build.deployment ? <StatusBadge status={build.deployment.status} /> : "—"}</td>
-              <td><Link href={`/builds/${build.id}`} aria-label={`Open build ${build.buildNumber}`} className="grid h-11 w-11 place-items-center rounded-lg text-slate-500 hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"><RiArrowRightSLine className="h-5 w-5" /></Link></td>
+              <td><Link href={`/builds/${build.id}`} aria-label={`Open build ${build.buildNumber} details`} className="grid h-11 w-11 place-items-center rounded-lg text-slate-500 hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"><RiEyeLine aria-hidden="true" className="h-5 w-5" /></Link></td>
             </tr>
           ))}</tbody>
         </table>
