@@ -29,13 +29,8 @@ export function AppModal({
     if (!dialog) return;
     const body = document.body;
     const previousOverflow = body.style.overflow;
-    const previousPaddingRight = body.style.paddingRight;
-    const bodyPaddingRight = Number.parseFloat(window.getComputedStyle(body).paddingRight) || 0;
-    const viewportWidthBeforeLock = document.documentElement.clientWidth;
     dialog.showModal();
     body.style.overflow = "hidden";
-    const viewportExpansion = document.documentElement.clientWidth - viewportWidthBeforeLock;
-    if (viewportExpansion > 0) body.style.paddingRight = `${bodyPaddingRight + viewportExpansion}px`;
     firstOpenFrameRef.current = window.requestAnimationFrame(() => {
       secondOpenFrameRef.current = window.requestAnimationFrame(() => {
         setModalState("open");
@@ -48,7 +43,6 @@ export function AppModal({
       if (secondOpenFrameRef.current !== null) window.cancelAnimationFrame(secondOpenFrameRef.current);
       if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current);
       body.style.overflow = previousOverflow;
-      body.style.paddingRight = previousPaddingRight;
       if (dialog.open) dialog.close();
     };
   }, []);
