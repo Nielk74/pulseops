@@ -107,3 +107,6 @@ development defaults to all mocked and production defaults to all live.
   URL-backed modal drill-down pattern for builds, tests, services, and commits.
 - Added coordinated scrim and surface transitions to every shared detail modal,
   including a faster animated exit and a no-displacement reduced-motion path.
+- Eliminated modal round-trip layout shift with a stable root scrollbar gutter
+  plus runtime width compensation, and added before/during/after Fleet geometry
+  regression coverage.
