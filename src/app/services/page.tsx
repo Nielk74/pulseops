@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { RiArrowRightSLine, RiExternalLinkLine } from "@remixicon/react";
+import { RiExternalLinkLine, RiEyeLine } from "@remixicon/react";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { getServices } from "@/server/queries";
@@ -16,7 +16,7 @@ export default function ServicesPage() {
         <tr key={`${service.serviceId}-${service.environment}`}>
           <td><Link href={`/services/${service.serviceId}`} className="inline-flex min-h-11 items-center font-medium text-white hover:text-emerald-300">{service.serviceName}</Link></td>
           <td className="font-mono text-xs">{service.environment}</td><td><StatusBadge status={service.status} /></td><td className="font-mono tabular-nums">{service.latencyMs ?? "—"} ms</td><td className="font-mono tabular-nums">{service.errorCount}</td><td className="font-mono tabular-nums">{service.instanceCount}</td><td>{formatRelativeTime(service.timestamp)}</td><td><StatusBadge status={service.relatedAnomalyCount ? "HIGH" : "HEALTHY"} label={String(service.relatedAnomalyCount)} /></td>
-          <td><div className="flex items-center"><Link href={`/services/${service.serviceId}`} aria-label={`Open ${service.serviceName}`} className="grid h-11 w-11 place-items-center rounded-lg text-slate-500 hover:bg-slate-800 hover:text-white"><RiArrowRightSLine className="h-5 w-5" /></Link>{service.grafanaUrl ? <a href={service.grafanaUrl} target="_blank" rel="noreferrer" aria-label={`Open ${service.serviceName} in Grafana`} className="grid h-11 w-11 place-items-center rounded-lg text-slate-500 hover:bg-slate-800 hover:text-white"><RiExternalLinkLine className="h-4 w-4" /></a> : null}</div></td>
+          <td><div className="flex items-center"><Link href={`/services/${service.serviceId}`} aria-label={`Open ${service.serviceName} details`} className="grid h-11 w-11 place-items-center rounded-lg text-slate-500 hover:bg-slate-800 hover:text-white"><RiEyeLine aria-hidden="true" className="h-5 w-5" /></Link>{service.grafanaUrl ? <a href={service.grafanaUrl} target="_blank" rel="noreferrer" aria-label={`Open ${service.serviceName} in Grafana`} className="grid h-11 w-11 place-items-center rounded-lg text-slate-500 hover:bg-slate-800 hover:text-white"><RiExternalLinkLine className="h-4 w-4" /></a> : null}</div></td>
         </tr>
       ))}</tbody></table></div>
     </div>

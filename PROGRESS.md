@@ -26,6 +26,8 @@ are present so those capabilities can be added safely.
 - [x] Consolidate fleet inventory, machine detail, action planning, and audit
       history into one selectable-card workspace.
 - [x] Add true multi-machine selection, focused detail, and bulk action planning.
+- [x] Standardize entity drill-downs as accessible, URL-backed detail modals and
+      place Fleet actions beside the machine grid.
 - [x] Add unit/browser tests, CI, Docker packaging, and developer documentation.
 - [x] Validate lint, types, tests, migration, seed, production build, and audit.
 - [x] Push the implementation and open a draft pull request.
@@ -53,7 +55,7 @@ development defaults to all mocked and production defaults to all live.
 - Designed anomalies: slow `UFT Pricing` correlated to `PricingApi`; suspiciously
   fast `UFT Login` correlated to test discovery.
 - Seven unit tests passed across anomaly statistics, detection, and correlation.
-- Nine Playwright checks passed across desktop and 390 px mobile; one
+- Eleven Playwright checks passed across desktop and 390 px mobile; one
   desktop duplicate of the mobile-only overflow check is intentionally skipped.
 - Production build, TypeScript, ESLint, migration, data integrity check, and
   production dependency audit passed. Production dependency findings: zero.
@@ -100,3 +102,6 @@ development defaults to all mocked and production defaults to all live.
 - Corrected Fleet card selection to be additive, separated focused detail from
   selection, added select-all/clear controls, and made action plans and history
   operate on the complete selected machine set.
+- Moved machine and TeamCity agent details into a responsive modal, relocated
+  Fleet actions and audit history beside the card grid, and introduced the same
+  URL-backed modal drill-down pattern for builds, tests, services, and commits.

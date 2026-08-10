@@ -140,19 +140,28 @@
 
 ```css
 .modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(4px);
 }
 
 .modal {
-  background: white;
+  background: #020617;
+  border: 1px solid #334155;
   border-radius: 16px;
-  padding: 32px;
   box-shadow: var(--shadow-xl);
-  max-width: 500px;
-  width: 90%;
+  max-height: calc(100dvh - 32px);
+  max-width: 1280px;
+  width: min(94vw, 1280px);
 }
 ```
+
+- Use one shared native-dialog shell for entity drill-downs. Soft navigation
+  opens URL-backed modals over the current workspace; direct URLs remain valid
+  full detail pages.
+- Modals must trap focus, close on Escape, restore navigation context, lock
+  background scrolling, and become full-screen sheets below 640px.
+- Keep a persistent 64px modal bar with entity context and a 44px close target.
+- Use modals for contextual detail, not primary navigation or destructive flows.
 
 ---
 

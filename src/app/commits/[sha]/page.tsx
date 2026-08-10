@@ -13,7 +13,7 @@ export default async function CommitDetailPage({ params }: { params: Promise<{ s
   if (!data) notFound();
   return (
     <div className="space-y-6">
-      <Link href="/commits" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-slate-400 hover:text-white"><RiArrowLeftLine className="h-4 w-4" /> Back to commits</Link>
+      <Link data-detail-back href="/commits" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-slate-400 hover:text-white"><RiArrowLeftLine className="h-4 w-4" /> Back to commits</Link>
       <PageHeader eyebrow="Source change" title={data.commit.subject} description={`${data.commit.authorName} · ${data.commit.committerDate.toLocaleString()}`} actions={<StatusBadge status="INFO" label={shortSha(data.commit.sha)} />} />
       <Card><CardContent><div className="flex items-start gap-4"><span className="grid h-10 w-10 place-items-center rounded-lg bg-blue-400/10 text-blue-300"><RiGitCommitLine className="h-5 w-5" /></span><div><p className="break-all font-mono text-xs text-blue-300">{data.commit.sha}</p><p className="mt-3 max-w-3xl whitespace-pre-wrap text-sm leading-6 text-slate-300">{data.commit.body || data.commit.subject}</p></div></div></CardContent></Card>
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ElementType } from "react";
+import { useEffect, useState, type ElementType } from "react";
 import { useRouter } from "next/navigation";
 import {
   RiArchiveStackLine,
@@ -24,6 +24,7 @@ import {
   RiWindowsLine
 } from "@remixicon/react";
 import { ActionPlanner, getMachineActionOption } from "@/components/action-planner";
+import { AppModal } from "@/components/app-modal";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
@@ -206,17 +207,19 @@ export function FleetOperations({
   actions,
   initialMachineId,
   initialSelectedIds,
+  initialDetailOpen,
   generatedAt
 }: {
   machines: FleetMachineData[];
   actions: FleetActionData[];
   initialMachineId?: string;
   initialSelectedIds?: string[];
+  initialDetailOpen?: boolean;
   generatedAt: Date;
 }) {
   const router = useRouter();
-  const detailsRef = useRef<HTMLElement>(null);
   const [focusedId, setFocusedId] = useState(initialMachineId ?? machines[0]?.id ?? "");
+  const [detailsOpen, setDetailsOpen] = useState(Boolean(initialDetailOpen));
   const [selectedIds, setSelectedIds] = useState<string[]>(() => {
     const validIds = new Set(machines.map((machine) => machine.id));
     const requestedIds = initialSelectedIds ?? (initialMachineId ? [initialMachineId] : []);
@@ -231,17 +234,19 @@ export function FleetOperations({
   const openPlans = actions.filter((action) => ["PLANNED", "RUNNING"].includes(action.status)).length;
 
   useEffect(() => {
-    if (!["#machine-detail", "#machine-actions"].includes(window.location.hash)) return;
-    const target = document.querySelector<HTMLElement>(window.location.hash);
-    window.requestAnimationFrame(() => target?.scrollIntoView({ behavior: "auto", block: "start" }));
+    if (window.location.hash === "#machine-detail") window.requestAnimationFrame(() => setDetailsOpen(true));
+    if (window.location.hash !== "#machine-actions") return;
+    window.requestAnimationFrame(() => document.querySelector<HTMLElement>("#machine-actions")?.scrollIntoView({ behavior: "auto", block: "start" }));
   }, []);
 
-  function updateFleetUrl(nextFocusedId: string, nextSelectedIds: string[], hash = window.location.hash) {
+  function updateFleetUrl(nextFocusedId: string, nextSelectedIds: string[], nextDetailsOpen = detailsOpen) {
     const url = new URL(window.location.href);
     url.pathname = "/fleet";
     url.searchParams.set("machine", nextFocusedId);
     url.searchParams.set("targets", nextSelectedIds.join(","));
-    url.hash = hash;
+    if (nextDetailsOpen) url.searchParams.set("detail", "machine");
+    else url.searchParams.delete("detail");
+    url.hash = "";
     window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
   }
 
@@ -264,13 +269,15 @@ export function FleetOperations({
     updateFleetUrl(focusedId, []);
   }
 
-  function focusMachine(id: string) {
+  function openMachineDetails(id: string) {
     setFocusedId(id);
-    updateFleetUrl(id, selectedIds, "#machine-detail");
-    window.requestAnimationFrame(() => {
-      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      detailsRef.current?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
-    });
+    setDetailsOpen(true);
+    updateFleetUrl(id, selectedIds, true);
+  }
+
+  function closeMachineDetails() {
+    setDetailsOpen(false);
+    updateFleetUrl(focusedId, selectedIds, false);
   }
 
   if (!selectedMachine) {
@@ -292,11 +299,11 @@ export function FleetOperations({
       : `${selectedMachines.length} machines`;
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6">
+    <div className="mx-auto max-w-[1500px] space-y-6">
       <PageHeader
         eyebrow="Machines · actions · audit"
         title="Fleet operations"
-        description="Select multiple machines, inspect focused detail, and create one audited bulk action plan without leaving this page."
+        description="Select multiple machines, open focused detail in a modal, and create one audited bulk action plan without leaving this workspace."
         actions={<StatusBadge status={attentionCount ? "DEGRADED" : "HEALTHY"} label={attentionCount ? `${attentionCount} need attention` : "Fleet healthy"} />}
       />
 
@@ -307,11 +314,12 @@ export function FleetOperations({
         <SummaryStat icon={RiShieldCheckLine} label="Open plans" value={openPlans} detail="Pending/running" tone={openPlans ? "amber" : "blue"} />
       </section>
 
-      <section aria-labelledby="machine-grid-title">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.42fr)] xl:items-start">
+      <section aria-labelledby="machine-grid-title" className="min-w-0">
         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 id="machine-grid-title" className="font-semibold text-white">Choose machines</h2>
-            <p className="mt-1 text-sm text-slate-500">Select any number of cards for bulk actions. Open details separately to keep building your selection.</p>
+            <p className="mt-1 text-sm text-slate-500">Select any number of cards for bulk actions. Open machine and agent details in a modal without losing your selection.</p>
           </div>
           <p className="flex items-center gap-2 text-xs text-slate-500">
             <RiEyeLine aria-hidden="true" className="h-4 w-4" /> Telemetry stays visible on touch
@@ -338,12 +346,12 @@ export function FleetOperations({
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
           {machines.map((machine) => {
             const machineLatest = machine.health[0];
             const status = machineStatus(machine);
             const selected = selectedIdSet.has(machine.id);
-            const focused = machine.id === selectedMachine.id;
+            const focused = detailsOpen && machine.id === selectedMachine.id;
             return (
               <article
                 key={machine.id}
@@ -390,8 +398,8 @@ export function FleetOperations({
                     type="button"
                     aria-label={`View details for ${machine.hostname}`}
                     aria-pressed={focused}
-                    aria-controls="machine-detail"
-                    onClick={() => focusMachine(machine.id)}
+                    aria-haspopup="dialog"
+                    onClick={() => openMachineDetails(machine.id)}
                     className={cn(
                       "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg px-2.5 font-medium transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
                       focused ? "bg-blue-400/10 text-blue-300" : "text-slate-400 hover:bg-slate-800 hover:text-white"
@@ -406,9 +414,73 @@ export function FleetOperations({
         </div>
       </section>
 
-      <p className="sr-only" aria-live="polite">{selectedMachines.length} machines selected. Details showing {selectedMachine.hostname}.</p>
+      <aside id="machine-actions" className="min-w-0 space-y-4 scroll-mt-24" aria-label="Actions and history for the current selection">
+        <Card className="border-emerald-400/20 xl:shadow-[0_18px_50px_rgba(2,6,23,0.35)]">
+          <CardHeader>
+            <div className="flex min-w-0 items-center gap-3">
+              <RiShieldCheckLine aria-hidden="true" className="h-5 w-5 shrink-0 text-emerald-300" />
+              <div className="min-w-0"><h3 className="truncate font-semibold text-white">Actions for {selectionLabel}</h3><p className="mt-1 text-xs text-slate-500">Bulk-ready · plan first · audit always</p></div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ActionPlanner
+              targets={selectedMachines.map((machine) => ({
+                id: machine.id,
+                label: machine.hostname,
+                detail: `${roleLabel(machine.role)} · ${machine.environment}`,
+                hasReference: Boolean(machine.referenceMachineId),
+                agentEnabled: machine.agent?.enabled
+              }))}
+              onPlanCreated={() => router.refresh()}
+            />
+          </CardContent>
+        </Card>
 
-      <section ref={detailsRef} id="machine-detail" aria-labelledby="focused-machine-title" className="scroll-mt-24 space-y-4">
+        <Card>
+          <CardHeader>
+            <div className="flex min-w-0 items-center gap-3">
+              <RiHistoryLine aria-hidden="true" className="h-5 w-5 shrink-0 text-blue-300" />
+              <div className="min-w-0"><h3 className="font-semibold text-white">Selection audit trail</h3><p className="mt-1 truncate text-xs text-slate-500">Actions touching {selectionLabel.toLowerCase()}</p></div>
+            </div>
+            <span className="font-mono text-xs text-slate-500">{selectedActions.length}</span>
+          </CardHeader>
+          {selectedActions.length ? (
+            <ol className="divide-y divide-pulse-border/60">
+              {selectedActions.slice(0, 8).map((action) => {
+                const option = getMachineActionOption(action.type);
+                const Icon = option.icon;
+                return (
+                  <li key={action.id} className="p-4">
+                    <div className="flex items-start gap-3">
+                      <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-lg ring-1", action.status === "SUCCESS" ? toneClasses.green : action.status === "FAILED" ? toneClasses.red : toneClasses.amber)}>
+                        <Icon aria-hidden="true" className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-medium text-slate-200">{option.label}</p><StatusBadge status={action.status} /></div>
+                        <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{action.reason}</p>
+                        <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-600"><span>{action.requestedBy}</span><span aria-hidden="true">·</span><span>{action.targets.length} {action.targets.length === 1 ? "target" : "targets"}</span><span aria-hidden="true">·</span><time dateTime={action.requestedAt.toISOString()}>{formatRelativeTime(action.requestedAt, generatedAt)}</time></p>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : (
+            <CardContent className="text-center">
+              <RiHistoryLine aria-hidden="true" className="mx-auto h-7 w-7 text-slate-600" />
+              <p className="mt-2 text-sm font-medium text-slate-300">No actions for this selection</p>
+              <p className="mt-1 text-xs text-slate-500">New bulk plans will appear here with their audit status.</p>
+            </CardContent>
+          )}
+        </Card>
+      </aside>
+      </div>
+
+      <p className="sr-only" aria-live="polite">{selectedMachines.length} machines selected. {detailsOpen ? `Details open for ${selectedMachine.hostname}.` : "Machine details closed."}</p>
+
+      {detailsOpen ? (
+      <AppModal label={`${selectedMachine.hostname} details`} context="Machine & agent" onClose={closeMachineDetails}>
+      <section id="machine-detail" aria-labelledby="focused-machine-title" className="space-y-4">
         <Card className="overflow-hidden border-slate-600/80">
           <div className="border-b border-pulse-border/60 bg-gradient-to-r from-emerald-400/[0.08] to-transparent p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -439,7 +511,7 @@ export function FleetOperations({
           </div>
         </Card>
 
-        <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(20rem,0.85fr)]">
+        <div className="min-w-0">
           <div className="min-w-0 space-y-4">
             <div className="grid min-w-0 gap-4 2xl:grid-cols-2">
               <Card>
@@ -535,68 +607,10 @@ export function FleetOperations({
             </div>
           </div>
 
-          <aside className="min-w-0 space-y-4" aria-label="Actions and history for the current selection">
-            <Card id="machine-actions" className="scroll-mt-24">
-              <CardHeader>
-                <div className="flex min-w-0 items-center gap-3">
-                  <RiShieldCheckLine aria-hidden="true" className="h-5 w-5 shrink-0 text-emerald-300" />
-                  <div className="min-w-0"><h3 className="truncate font-semibold text-white">Actions for {selectionLabel}</h3><p className="mt-1 text-xs text-slate-500">Bulk-ready · plan first · audit always</p></div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ActionPlanner
-                  targets={selectedMachines.map((machine) => ({
-                    id: machine.id,
-                    label: machine.hostname,
-                    detail: `${roleLabel(machine.role)} · ${machine.environment}`,
-                    hasReference: Boolean(machine.referenceMachineId),
-                    agentEnabled: machine.agent?.enabled
-                  }))}
-                  onPlanCreated={() => router.refresh()}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <div className="flex min-w-0 items-center gap-3">
-                  <RiHistoryLine aria-hidden="true" className="h-5 w-5 shrink-0 text-blue-300" />
-                  <div className="min-w-0"><h3 className="font-semibold text-white">Selection audit trail</h3><p className="mt-1 truncate text-xs text-slate-500">Actions touching {selectionLabel.toLowerCase()}</p></div>
-                </div>
-                <span className="font-mono text-xs text-slate-500">{selectedActions.length}</span>
-              </CardHeader>
-              {selectedActions.length ? (
-                <ol className="divide-y divide-pulse-border/60">
-                  {selectedActions.slice(0, 8).map((action) => {
-                    const option = getMachineActionOption(action.type);
-                    const Icon = option.icon;
-                    return (
-                      <li key={action.id} className="p-4">
-                        <div className="flex items-start gap-3">
-                          <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-lg ring-1", action.status === "SUCCESS" ? toneClasses.green : action.status === "FAILED" ? toneClasses.red : toneClasses.amber)}>
-                            <Icon aria-hidden="true" className="h-4 w-4" />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-medium text-slate-200">{option.label}</p><StatusBadge status={action.status} /></div>
-                            <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{action.reason}</p>
-                            <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-600"><span>{action.requestedBy}</span><span aria-hidden="true">·</span><span>{action.targets.length} {action.targets.length === 1 ? "target" : "targets"}</span><span aria-hidden="true">·</span><time dateTime={action.requestedAt.toISOString()}>{formatRelativeTime(action.requestedAt, generatedAt)}</time></p>
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ol>
-              ) : (
-                <CardContent className="text-center">
-                  <RiHistoryLine aria-hidden="true" className="mx-auto h-7 w-7 text-slate-600" />
-                  <p className="mt-2 text-sm font-medium text-slate-300">No actions for this selection</p>
-                  <p className="mt-1 text-xs text-slate-500">New bulk plans will appear here with their audit status.</p>
-                </CardContent>
-              )}
-            </Card>
-          </aside>
         </div>
       </section>
+      </AppModal>
+      ) : null}
 
       <div className="flex items-start gap-3 rounded-xl border border-blue-500/20 bg-blue-500/[0.07] p-4 text-sm text-blue-200">
         <RiErrorWarningLine aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" />

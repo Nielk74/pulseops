@@ -16,10 +16,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: "device-width", initialScale: 1, colorScheme: "dark", themeColor: "#020617" };
 export const dynamic = "force-dynamic";
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default function RootLayout({ children, modal }: Readonly<{ children: ReactNode; modal?: ReactNode }>) {
   return (
     <html lang="en" className="dark">
-      <body><AppShell>{children}</AppShell></body>
+      <body><AppShell>{children}</AppShell>{modal}</body>
     </html>
   );
 }

@@ -14,7 +14,7 @@ export default async function BuildDetailPage({ params }: { params: Promise<{ id
   if (!data) notFound();
   return (
     <div className="space-y-6">
-      <Link href="/builds" className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"><RiArrowLeftLine className="h-4 w-4" /> Back to builds</Link>
+      <Link data-detail-back href="/builds" className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"><RiArrowLeftLine className="h-4 w-4" /> Back to builds</Link>
       <PageHeader eyebrow="Build trace" title={`${data.buildType} #${data.buildNumber}`} description={`${data.branch} · ${data.environment} · ${data.startedAt?.toLocaleString() ?? "Queued"}`} actions={<StatusBadge status={data.status} />} />
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Duration" value={formatDuration(data.durationMs)} detail={`Queue ${formatDuration(data.queueDurationMs)}`} icon={RiTimerLine} tone="blue" />

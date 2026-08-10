@@ -28,9 +28,32 @@ test("overview exposes correlated operational health", async ({ page }) => {
 test("test anomaly opens a ranked explanation", async ({ page }) => {
   await page.goto("/tests");
   await page.getByRole("link", { name: "UFT Pricing", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "UFT Pricing" })).toBeVisible();
-  await expect(page.getByText("Most likely cause")).toBeVisible();
-  await expect(page.getByText("PricingApi", { exact: true }).first()).toBeVisible();
+  const dialog = page.getByRole("dialog", { name: "Test explanation" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("heading", { name: "UFT Pricing" })).toBeVisible();
+  await expect(dialog.getByText("Most likely cause")).toBeVisible();
+  await expect(dialog.getByText("PricingApi", { exact: true }).first()).toBeVisible();
+  await dialog.getByRole("button", { name: "Close Test explanation" }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page).toHaveURL(/\/tests$/);
+});
+
+test("build, service, and commit details share the modal pattern", async ({ page }) => {
+  const cases = [
+    { path: "/builds", opener: page.getByRole("link", { name: /^Open build / }).first(), label: "Build details" },
+    { path: "/services", opener: page.locator('a[aria-label^="Open "]:not([aria-label$=" in Grafana"])').first(), label: "Service details" },
+    { path: "/commits", opener: page.getByRole("link", { name: /^Open commit / }).first(), label: "Commit details" }
+  ];
+
+  for (const detail of cases) {
+    await page.goto(detail.path);
+    await detail.opener.click();
+    const dialog = page.getByRole("dialog", { name: detail.label });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: `Close ${detail.label}` }).click();
+    await expect(dialog).not.toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${detail.path}$`));
+  }
 });
 
 test("fleet supports additive card selection and bulk actions in one workspace", async ({ page }, testInfo) => {
@@ -42,7 +65,7 @@ test("fleet supports additive card selection and bulk actions in one workspace",
     await route.fulfill({
       status: 201,
       contentType: "application/json",
-      body: JSON.stringify({ actionId: "action-bulk-browser-test" })
+      body: JSON.stringify({})
     });
   });
 
@@ -53,6 +76,14 @@ test("fleet supports additive card selection and bulk actions in one workspace",
   await expect(selectionControls.getByText("1 machine selected", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Deselect BUILD-01,/ })).toHaveAttribute("aria-pressed", "true");
 
+  if (testInfo.project.name === "desktop-chrome") {
+    const machineArea = await page.locator('section[aria-labelledby="machine-grid-title"]').boundingBox();
+    const actionArea = await page.locator("#machine-actions").boundingBox();
+    expect(machineArea).not.toBeNull();
+    expect(actionArea).not.toBeNull();
+    expect(actionArea!.x).toBeGreaterThan(machineArea!.x + machineArea!.width);
+  }
+
   await page.getByRole("button", { name: /^Select UFT-03,/ }).click();
   await expect(page.getByRole("button", { name: /^Deselect BUILD-01,/ })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("button", { name: /^Deselect UFT-03,/ })).toHaveAttribute("aria-pressed", "true");
@@ -60,19 +91,25 @@ test("fleet supports additive card selection and bulk actions in one workspace",
   await expect(page.getByRole("heading", { name: "Actions for 2 machines" })).toBeVisible();
   await expect(page.getByRole("radio", { name: /Sync packages/ })).toBeDisabled();
 
-  await page.getByRole("button", { name: "View details for UFT-03" }).click();
+  const detailsTrigger = page.getByRole("button", { name: "View details for UFT-03" });
+  await detailsTrigger.click();
   await expect.poll(() => page.evaluate(() => ({
     machine: new URL(window.location.href).searchParams.get("machine"),
     targets: new URL(window.location.href).searchParams.get("targets"),
-    hash: window.location.hash
+    detail: new URL(window.location.href).searchParams.get("detail")
   }))).toEqual({
     machine: "machine-uft-03",
     targets: "machine-build-01,machine-uft-03",
-    hash: "#machine-detail"
+    detail: "machine"
   });
-  await expect(page.getByRole("heading", { name: "UFT-03", exact: true })).toBeVisible();
+  const machineDialog = page.getByRole("dialog", { name: "UFT-03 details" });
+  await expect(machineDialog).toBeVisible();
+  await expect(machineDialog.getByRole("heading", { name: "UFT-03", exact: true })).toBeVisible();
+  await expect(machineDialog.getByRole("list", { name: "UFT-03 packages" }).getByText("googlechrome", { exact: true })).toBeVisible();
+  await machineDialog.getByRole("button", { name: "Close UFT-03 details" }).click();
+  await expect(machineDialog).not.toBeVisible();
+  await expect(detailsTrigger).toBeFocused();
   await expect(page.getByRole("radio", { name: /Refresh machine/ })).toBeChecked();
-  await expect(page.getByRole("list", { name: "UFT-03 packages" }).getByText("googlechrome", { exact: true })).toBeVisible();
 
   await page.getByLabel("Operational reason").fill("Verify health across the selected build and test machines.");
   await page.getByRole("button", { name: "Review and create plan" }).click();
@@ -91,8 +128,8 @@ test("fleet supports additive card selection and bulk actions in one workspace",
   await expect(page.getByRole("heading", { name: "Fleet operations" })).toBeVisible();
 
   await page.goto("/fleet/machine-uft-03");
-  await expect(page).toHaveURL(/\/fleet\?machine=machine-uft-03#machine-detail$/);
-  await expect(page.getByRole("heading", { name: "UFT-03", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/fleet\?machine=machine-uft-03&detail=machine$/);
+  await expect(page.getByRole("dialog", { name: "UFT-03 details" })).toBeVisible();
 });
 
 test("mobile layout has no horizontal overflow", async ({ page }, testInfo) => {

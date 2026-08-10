@@ -14,7 +14,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   if (!data) notFound();
   return (
     <div className="space-y-6">
-      <Link href="/services" className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white"><RiArrowLeftLine className="h-4 w-4" /> Back to services</Link>
+      <Link data-detail-back href="/services" className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white"><RiArrowLeftLine className="h-4 w-4" /> Back to services</Link>
       <PageHeader eyebrow="Service evidence" title={data.current.serviceName} description={`${data.current.environment} · ${data.current.instanceCount} instances · checked ${data.current.timestamp.toLocaleString()}`} actions={<div className="flex gap-2"><StatusBadge status={data.current.status} />{data.current.grafanaUrl ? <a className="button-secondary" href={data.current.grafanaUrl} target="_blank" rel="noreferrer">Grafana <RiExternalLinkLine className="h-4 w-4" /></a> : null}</div>} />
       <Card><CardHeader><div><h2 className="font-semibold text-white">Health history</h2><p className="mt-1 text-xs text-slate-500">Latency and summarized errors</p></div></CardHeader><CardContent><ServiceHistoryChart data={data.history.map((sample) => ({ time: sample.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), latencyMs: sample.latencyMs ?? 0, errors: sample.errorCount }))} /></CardContent></Card>
       <section className="grid gap-4 lg:grid-cols-2">
