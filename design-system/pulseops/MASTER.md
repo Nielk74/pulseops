@@ -161,6 +161,8 @@
 - Modals must trap focus, close on Escape, restore navigation context, lock
   background scrolling, and become full-screen sheets below 640px.
 - Keep a persistent 64px modal bar with entity context and a 44px close target.
+- Animate only the scrim and modal surface: 220–240ms ease-out on entry and
+  160–180ms ease-in on exit. Disable displacement for reduced-motion users.
 - Use modals for contextual detail, not primary navigation or destructive flows.
 
 ---
